@@ -1,0 +1,7 @@
+db.ini
+dump.txt*
+*~
+old
+__*
+.env
+run.sh*

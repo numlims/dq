@@ -1,0 +1,431 @@
+# dq
+
+usage: python dq.py <db target> <query>
+
+dq gives dot-notation for sql foreign keys in queries.
+
+it supports queries like
+
+sampleidbox.sample.location; sampleidbox.psn =
+'4020189864'
+
+the same query in sql would be:
+
+select s.* from sampleidbox sidb
+  join sample s on sidb.sample = s.id
+  join samplelocation on sample.samplelocation = samplelocation.id  
+  where sidb.psn = '4020189864'
+
+the structure of our program:
+
+<<dq.py
+
+<<import>>
+<<vars>>
+
+<<topostfix>>
+<<findfk>>
+<<join help>>
+<<join>>
+<<maketree>>
+<<run>>
+
+<<main>>
+
+>>
+
+dq joint foreign keys via "." und "<". bei a.b ist der foreign
+key von a nach b, bei a<b ist der foreign key von b nach a.
+
+in join nehmen wir die query in standardform und stellen den operator
+jeweils nach den/die operanden, vielleicht geht das abarbeiten dann
+einfacher.
+
+<<join
+def join(table, query):
+  global joins
+  #print(f"query: {query}")
+  #print(f"table: {table}")
+  query = topostfix(query)
+  #print(f"topostfix query: '{query}'")
+  words = query.split(" ")
+  <<.>>
+>>
+
+wir starten beim ersten operator und nehmen in zweierschritten je ein
+operand/operator paar # todo was wenn das ein < ist
+
+<<
+  i = 1
+  # for i = 1; i < len(words); i += 2:
+  while i < len(words):
+    w = words[i]
+    <<.>>
+    i += 2
+>>
+
+unsere beiden operatoren sind "." (forward) und "<" (backward). wenn
+wir an einem der beiden operatoren sind, merke den vorausgehenden
+namen.
+
+<<
+    if w == "." or w == "<":
+      name = words[i-1]
+>>
+
+wir sind an einem "." (forward) operator. wenn der letzte operator ein
+"<" (backward) war, beende backwards. mach dann die normalen forward
+schritte.
+
+<<
+    if w == ".":
+      if i >= 0 and words[i-2] == "<": 
+        <<backwards ende>>
+      <<forwards>>
+>>
+
+wir sind an einem "<" (backward) operator. wenn der letzte operator
+ein "." (forward) war (oder es keinen letzten operator gab), beginne
+backwards. mach dann die normalen backwards schritte.
+
+<<
+    if w == "<":
+      if i <= 1 or words[i-2] == ".": # todo index check
+        <<begin backwards>>
+      <<backwards>>
+>>
+
+falls wir am letzten wort sind, beende backwards. 
+
+<<
+    if i == len(words)-1:
+      <<backwards ende>>
+>>
+
+returne die aktuelle table. child queries wuerden von ihr ausgehen.
+
+<<..
+  return table
+>>
+
+wenn wir forwearts gehen folgen wir dem aktuellen foreign key einen
+schritt, joinen ihn rein und merken uns die tabelle.
+
+wenn das feld das letzte feld in einer forward-kette ist muss es kein
+foreign key sein, es koennte auch ein normales feld oder * sein. wenn
+das der fall ist, merken wir es uns fuer den select.
+
+<<join/forwards
+      if name in fkfromtc[table]:
+        fk = fkfromtc[table][name][0]
+        #print(fk)
+        joins.append(joinforw(fk))
+        table = fk.tt
+      else:
+        specificselect.append((table, name))
+>>
+
+forward joins muessen wir im unterschied zu backward joins nicht beenden.
+
+<<vars
+specificselect = []
+>>
+
+backwards beginnen wir in dem wir die gemerkten namen leeren.
+
+<<join/begin backwards
+        names = []
+>>
+
+wenn wir backwards gehen merken wir uns den namen.
+
+<<join/backwards
+      names.append(name)
+>>
+
+backwards beenden wir indem wir die gemerkten namen vom vorletzten zum
+ersten durchlaufen, die jeweiligen foreign keys finden und joinen. der
+am juengsten gemerkte name ist tabellenname.
+
+<<join/backwards ende
+      #print("backwards ende starting")
+      #print(f"names: {names}")
+      tableb = names[len(names)-1]
+      joinb = []
+      j = len(names)-2
+      #for i = len(names) -2; i >=0; i--:
+      while j >= 0:
+        fk = fkfromtc[tableb][names[j]]
+        joinb.append(joinbackw(fk))
+        tableb = fk.tt
+        j -= 1
+>>
+
+wenn beim forward zu backward richtungswechsel tabelle auf tabelle trifft
+(bps: sample<scid), dann ist tableb jetzt nicht gleich table, dem
+letzten stand der forward kette. dann finde den fk der die tabellen
+verbindet.
+
+ein beispiel, wo der fk nicht in der query mit angegeben ist: bei
+`sample<scid` ist table (linke seite) "sample" und tableb (rechte
+seite) "scid". ein beispiel, wo der fk mit angegeben ist: bei
+`sample.oid<sample<scid` ist table (linke seite) "sample" und tableb
+(rechte seite) ist auch "sample".
+
+<<
+      #print(f"tableb: {tableb}, table: {table}")
+      if tableb != table:
+        fk = findfk(tableb, table)
+        #print(f"fk: {fk}")
+        joinb.append(joinbackw(fk))
+>>
+
+reverse die backward joins (dann stehen sie wieder in query reihenfolge)
+und appende sie.
+
+<<
+      #print(f"joinb: {joinb}")
+      joinb.reverse()
+      # append elements from joinb to join
+      joins = joins + joinb
+>>
+
+der juengst gemerkte name ist der tabellenname von dem die naechste
+forward-kette starten wuerde. wir setzen ihn erst hier, weil wir table
+vorher bei findfk brauchen.
+
+<<
+      table = names[len(names)-1]
+>>
+
+das joins array healt die join strings.
+
+<<vars
+joins = []
+>>
+
+die funktionen um forward und backward zu joinen.
+
+<<join help
+def joinforw(fk):
+  return "join " + fk.tt + " on " + fk.ft + "." + fk.fc + " = " + fk.tt + "." + fk.tc
+
+def joinbackw(fk):
+  return "join " + fk.ft + " on " + fk.tt + "." + fk.tc + " = " + fk.ft + "." + fk.fc
+>>
+
+und um den fk zu finden.
+
+<<findfk
+# findfk finds foreign key from table a to table b
+# if more than one, error
+def findfk(a, b):
+  out = None
+  for k in fkfromt[a]:
+    if k.tt == b:
+      if out != None: # there is already a fk
+        print("error: more than one fk from a to b")
+        return None
+      out = k
+  return out
+>>
+
+und um innerhalb von queries zur postfix notation zu kommen. wie
+noetig ist das?
+
+<<topostfix
+# topostfix puts the operators after their operands
+def topostfix(query):
+  a = re.split(r"([.<])", query) # use parethesis () to keep the delimiter
+  a = a[1:] # assume query starts with operator, then first word is '', drop it
+  # out = a[0]
+  out = ""
+  i = 0
+  while i < len(a):
+    out += a[i+1] + " " + a[i] + " " # a[i]: operator a[i+1]: name
+    i += 2
+  return out
+>>
+
+wir importieren re.
+
+<<import
+import re
+>>
+
+get the db config chapter and concatenate the rest of the args as
+query string
+
+<<main
+configchap = sys.argv[1]
+inquery = ""
+for s in sys.argv[2:]:
+    inquery += s
+    inquery += " " # todo don't put to end
+# print("input query: " + inquery)
+tb = tbl(configchap)
+>>
+
+import sys and tbl.
+
+<<import
+import sys
+from tbl import *
+>>
+
+split the query string in select and where part on comma.
+
+<<main
+a = re.split(r"; +", inquery) # todo regex?
+select = a[0]
+#print(f"select: {select}")
+where = a[1]
+>>
+
+get the foreign keys referenced by from-table and from-column.
+
+<<
+fka = tb.fk()
+fkfromtc = tb.fkfromtc(fka)
+fkfromt = tb.fkfromt(fka)
+#print(fkfromtc)
+>>
+
+um mehrere joins an eine tabelle machen zu keonnen wuerden wir queries
+gerne sich verzweigen lassen. zum beispiel:
+
+meine.query(.eine<child.query, eine(.weitere, .child,
+.query)).eine.letzte<child<query
+
+dafuer bauen wir einen baum aus unserer inquery und parsen dann die
+. und < joins aus dem baum.
+
+we take the first named table as from clause (for now).
+
+<<
+i = re.search(r"[.<(]", select).start()
+selectfrom = select[0:i]
+root = maketree(select[i:])
+run(selectfrom, root)
+# for debugging without () notation
+#join(selectfrom, select[i:]) # ".sample.samplelocation.*")
+>>
+
+jede node im baum ist ein array, mit dem ersten element die node-query
+und die restlichen elemente die children.
+
+<<run
+# run parses queries for node and its children starting from table
+def run(table, node):
+  t = join(table, node[0])
+  for child in node[1:]:
+    run(t, child)
+>>
+
+die strategie von maketree ist: alles vor der ersten "(" klammer ist
+query, die folgenden komma-getrennten queries sind ihre children,
+alles nach der schluss-klammer ")" ist ein weiteres child.
+
+[
+  "my query",
+  ["first child query", its, children, ...],
+  ["second child query", its, children, ...],
+  ...
+]
+
+<<maketree
+# maketree makes a tree from query
+def maketree(query):
+  read = ""
+  reads = []
+  bracketsin = 0
+  i = 0;
+  while i < len(query):
+    c = query[i]
+    <<fill reads>>
+    i += 1
+  <<recurse>>
+>>
+
+in der schleife merken wir uns zuerst den bracket-level.
+
+<<maketree/fill reads
+    if c == "(":
+      bracketsin += 1
+    elif c == ")":
+      bracketsin -= 1
+>>
+
+reads werden geendet durch die oeffnende klammer, kommas, die
+schliessende klammer und string-ende. wir muessen bei kommas checken,
+dass wir auf dem level der aeusseren klammern sind (und sie nicht zu
+child-queries geheoren).
+
+<<
+    if (c == "(" and bracketsin == 1) or (c == "," and bracketsin == 1) or (c == ")" and bracketsin == 0):
+      #print(f"append read: {read}")
+      reads.append(read)
+      read = ""
+      i += 1
+      continue
+    elif i == len(query) - 1:
+      #print(f"append read: {read}")
+      read += c # take the last character at string end
+      reads.append(read)
+>>
+
+wenn "(", ")" und "," einen read beendet haben wurden sie oben vom
+continue geskippt, die restlichen characters lesen wir.
+
+<<
+    read += c
+>>
+
+nach dem loop haben wir ein reads array wo der erste string die node
+query ist und die restlichen strings unparsed child queries sind. wir
+machen jeweils baeume aus ihnen.
+
+<<maketree/recurse
+  #print(f"reads: {reads}")
+  out = [reads[0]]
+  i = 1
+  while i < len(reads):
+    out.append(maketree(reads[i]))
+    i += 1
+  #print(f"out: {out}")
+  return out
+>>
+
+jetzt puzzlen wir das sql zusammen. in specificselect steht was wir
+selecten moechten, in joins stehen die joins.
+
+<<main
+#print(f"joins: {joins}")
+joinstring = " \n".join(joins)
+>>
+
+wenn keine eintraege im specific select sind, nehmen wir *.
+
+<<
+selectget = "" # todo change
+if len(specificselect) == 0:
+  selectget = "*"
+else:
+  selectget = ", ".join("%s.%s" % tup for tup in specificselect)
+>>
+
+selectget, selectfrom, joinstring und where landen im generierten sql.
+
+<<
+gensql = f"select {selectget} from {selectfrom} \n{joinstring} \nwhere {where}"
+print(gensql)
+>>
+
+send the query to the db and print the result.
+
+<<
+db = dbcq(configchap)
+# print("generated query: " + sqlquery)
+print(db.qfad(gensql))
+#print(json.dumps())
+>>
