@@ -11,9 +11,9 @@ sampleidcont.sample.location; sampleidcont.psn =
 
 in sql, the same query would be:
 
-select s.* from sampleidcont sidc
-  join sample s on sidb.sample = s.id
-  join samplelocation on sample.samplelocation = samplelocation.id  
+select s.* from sampleidcont sidc <br>
+  join sample s on sidb.sample = s.id <br>
+  join samplelocation on sample.samplelocation = samplelocation.id <br>
   where sidc.psn = '4020189864'
 
 ## setup
