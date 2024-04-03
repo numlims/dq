@@ -18,7 +18,7 @@ in sql, the same query would be:
 
 ## setup
 
-enter your database info in db.example.ini and mv db.example.ini to
+enter your database info in db.example.ini and rename db.example.ini to
 db.ini.
 
 the code is in dq.ct. to make, say
@@ -27,8 +27,10 @@ the code is in dq.ct. to make, say
 make
 ```
 
-if you'd rather edit .org than .ct, you can convert between org and
-ct with ct/orgtoct and ct/cttoorg.
+if you'd rather edit
+[.org](https://orgmode.org/manual/Working-with-Source-Code.html) than
+[.ct](https://github.com/tnustrings/codetext), you can convert between
+org and ct with ct/orgtoct and ct/cttoorg.
 
 ## missing
 
