@@ -1,6 +1,6 @@
 # dq
 
-usage: python dq.py <db target> <query>
+usage: python dq.py \<db target\> \<query\>
 
 dq gives dot-notation for sql foreign keys in queries.
 
