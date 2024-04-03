@@ -6,12 +6,12 @@ dq gives dot-notation for sql foreign keys in queries.
 
 it supports queries like
 
-sampleidcont.sample.location; sampleidcont.psn =
+> sampleidcont.sample.location; sampleidcont.psn =
 '4020189864'
 
 in sql, the same query would be:
 
-select s.* from sampleidcont sidc <br>
+> select s.* from sampleidcont sidc <br>
   join sample s on sidb.sample = s.id <br>
   join samplelocation on sample.samplelocation = samplelocation.id <br>
   where sidc.psn = '4020189864'
