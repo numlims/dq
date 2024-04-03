@@ -11,7 +11,7 @@ it supports queries like
 
 in sql, the same query would be:
 
-> select s.* from sampleidcont sidc <br>
+> select s.location from sampleidcont sidc <br>
   join sample s on sidb.sample = s.id <br>
   join samplelocation on sample.samplelocation = samplelocation.id <br>
   where sidc.psn = '4020189864'
