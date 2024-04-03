@@ -2,7 +2,7 @@
 
 usage: python dq.py \<db target\> \<query\>
 
-dq gives dot-notation for sql foreign keys in queries.
+dq gives dot-notation for foreign keys in sql queries.
 
 it supports queries like
 
