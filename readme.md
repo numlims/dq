@@ -34,5 +34,5 @@ org and ct with ct/orgtoct and ct/cttoorg.
 
 ## missing
 
-- maybe offer to alias table names like tablename:alias, for when a table appears twice or more in the same query
-- would it be wise to prefix all returned values with the name/alias of their table?
+- maybe prefix all returned values with the name/alias of their table?
+- allow update?
