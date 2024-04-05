@@ -24,6 +24,9 @@ the structure of our program:
 <<vars>>
 
 <<topostfix>>
+<<both>>
+<<one>>
+<<splitas>>
 <<findfk>>
 <<join help>>
 <<join>>
@@ -42,7 +45,7 @@ jeweils nach den/die operanden, vielleicht geht das abarbeiten dann
 einfacher.
 
 <<join
-def join(table, query):
+def join(table, tablealias, query):
   global joins
   #print(f"query: {query}")
   #print(f"table: {table}")
@@ -70,7 +73,7 @@ namen.
 
 <<
     if w == "." or w == "<":
-      name = words[i-1]
+      (name, alias) = splitas(words[i-1])
 >>
 
 wir sind an einem "." (forward) operator. wenn der letzte operator ein
@@ -105,8 +108,11 @@ falls wir am letzten wort sind, beende backwards.
 returne die aktuelle table. child queries wuerden von ihr ausgehen.
 
 <<..
-  return table
+  return (table, tablealias)
 >>
+
+das war der schleifendurchlauf, jetzt kommen die details wie wir forwearts und
+backwards gehen, und wie wir backwards starten und beenden.
 
 wenn wir forwearts gehen folgen wir dem aktuellen foreign key einen
 schritt, joinen ihn rein und merken uns die tabelle.
@@ -119,10 +125,11 @@ das der fall ist, merken wir es uns fuer den select.
       if name in fkfromtc[table]:
         fk = fkfromtc[table][name][0]
         #print(fk)
-        joins.append(joinforw(fk))
+        joins.append(joinforw(fk, tablealias, alias))
         table = fk.tt
+        tablealias = alias
       else:
-        specificselect.append((table, name))
+        specificselect.append((table, tablealias, name))
 >>
 
 forward joins muessen wir im unterschied zu backward joins nicht beenden.
@@ -135,29 +142,32 @@ backwards beginnen wir in dem wir die gemerkten namen leeren.
 
 <<join/begin backwards
         names = []
+        aliases = []
 >>
 
 wenn wir backwards gehen merken wir uns den namen.
 
 <<join/backwards
       names.append(name)
+      aliases.append(alias)
 >>
 
 backwards beenden wir indem wir die gemerkten namen vom vorletzten zum
 ersten durchlaufen, die jeweiligen foreign keys finden und joinen. der
-am juengsten gemerkte name ist tabellenname.
+letzte gemerkte name ist tabellenname.
 
 <<join/backwards ende
       #print("backwards ende starting")
       #print(f"names: {names}")
       tableb = names[len(names)-1]
+      aliasb = aliases[len(names)-1]
       joinb = []
       j = len(names)-2
-      #for i = len(names) -2; i >=0; i--:
       while j >= 0:
         fk = fkfromtc[tableb][names[j]]
-        joinb.append(joinbackw(fk))
+        joinb.append(joinbackw(fk), aliasb, aliases[j])
         tableb = fk.tt
+        aliasb = aliases[j]
         j -= 1
 >>
 
@@ -177,7 +187,7 @@ seite) "scid". ein beispiel, wo der fk mit angegeben ist: bei
       if tableb != table:
         fk = findfk(tableb, table)
         #print(f"fk: {fk}")
-        joinb.append(joinbackw(fk))
+        joinb.append(joinbackw(fk, aliasb, None))
 >>
 
 reverse die backward joins (dann stehen sie wieder in query reihenfolge)
@@ -196,6 +206,7 @@ vorher bei findfk brauchen.
 
 <<
       table = names[len(names)-1]
+      tablealias = aliases[len(names)-1]
 >>
 
 das joins array healt die join strings.
@@ -207,11 +218,29 @@ joins = []
 die funktionen um forward und backward zu joinen.
 
 <<join help
-def joinforw(fk):
-  return "join " + fk.tt + " on " + fk.ft + "." + fk.fc + " = " + fk.tt + "." + fk.tc
+def joinforw(fk, asfrom, asto):
+  return "join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
 
-def joinbackw(fk):
-  return "join " + fk.ft + " on " + fk.tt + "." + fk.tc + " = " + fk.ft + "." + fk.fc
+def joinbackw(fk, asfrom, asto):
+  return "join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
+>>
+
+both gibt die aliase mit aus wenn sie nicht none sind.
+
+<<both
+# both gives name and alias if alias is non null
+def both(a, b):
+  return a + (" " + b if b != None else "")
+>>
+
+one gibt den ersten, wenn der null ist den zweiten.
+
+<<one
+# one gives the first, if it is null, the second
+def one(a, b):
+  if a == None:
+    return b
+  return a
 >>
 
 und um den fk zu finden.
@@ -304,11 +333,26 @@ we take the first named table as from clause (for now).
 
 <<
 i = re.search(r"[.<(]", select).start()
-selectfrom = select[0:i]
+(selectfrom, selectfromalias) = splitas(select[0:i])
 root = maketree(select[i:])
-run(selectfrom, root)
+run(selectfrom, selectfromalias, root)
 # for debugging without () notation
 #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
+>>
+
+dq unterstuetzt tabellen aliase via name:alias. input parsing laeuft ueber
+splitas.
+
+<<splitas
+# splitas returns tuple of tablename and alias
+def splitas(s):
+  a = s.split(":")
+  if len(a) > 2:
+    print("error: alias tables with name:alias")
+    exit
+  if len(a) == 1:
+    return (a[0], None)
+  return (a[0], a[1])
 >>
 
 jede node im baum ist ein array, mit dem ersten element die node-query
@@ -316,10 +360,10 @@ und die restlichen elemente die children.
 
 <<run
 # run parses queries for node and its children starting from table
-def run(table, node):
-  t = join(table, node[0])
+def run(table, alias, node):
+  (t, a) = join(table, alias, node[0])
   for child in node[1:]:
-    run(t, child)
+    run(t, a, child)
 >>
 
 die strategie von maketree ist: alles vor der ersten "(" klammer ist
@@ -404,20 +448,21 @@ selecten moechten, in joins stehen die joins.
 joinstring = " \n".join(joins)
 >>
 
-wenn keine eintraege im specific select sind, nehmen wir *.
+wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es aliasse gibt, nimm aliasse.
 
 <<
 selectget = "" # todo change
 if len(specificselect) == 0:
   selectget = "*"
 else:
-  selectget = ", ".join("%s.%s" % tup for tup in specificselect)
+  #print(f"specificselect: {specificselect}")
+  selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
 >>
 
 selectget, selectfrom, joinstring und where landen im generierten sql.
 
 <<
-gensql = f"select {selectget} from {selectfrom} \n{joinstring} \nwhere {where}"
+gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
 print(gensql)
 >>
 

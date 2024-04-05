@@ -22,6 +22,29 @@ def topostfix(query):
   return out
 
 
+# both gives name and alias if alias is non null
+def both(a, b):
+  return a + (" " + b if b != None else "")
+
+
+# one gives the first, if it is null, the second
+def one(a, b):
+  if a == None:
+    return b
+  return a
+
+
+# splitas returns tuple of tablename and alias
+def splitas(s):
+  a = s.split(":")
+  if len(a) > 2:
+    print("error: alias tables with name:alias")
+    exit
+  if len(a) == 1:
+    return (a[0], None)
+  return (a[0], a[1])
+
+
 # findfk finds foreign key from table a to table b
 # if more than one, error
 def findfk(a, b):
@@ -35,14 +58,14 @@ def findfk(a, b):
   return out
 
 
-def joinforw(fk):
-  return "join " + fk.tt + " on " + fk.ft + "." + fk.fc + " = " + fk.tt + "." + fk.tc
+def joinforw(fk, asfrom, asto):
+  return "join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
 
-def joinbackw(fk):
-  return "join " + fk.ft + " on " + fk.tt + "." + fk.tc + " = " + fk.ft + "." + fk.fc
+def joinbackw(fk, asfrom, asto):
+  return "join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
 
 
-def join(table, query):
+def join(table, tablealias, query):
   global joins
   #print(f"query: {query}")
   #print(f"table: {table}")
@@ -54,77 +77,84 @@ def join(table, query):
   while i < len(words):
     w = words[i]
     if w == "." or w == "<":
-      name = words[i-1]
+      (name, alias) = splitas(words[i-1])
     if w == ".":
       if i >= 0 and words[i-2] == "<": 
         #print("backwards ende starting")
         #print(f"names: {names}")
         tableb = names[len(names)-1]
+        aliasb = aliases[len(names)-1]
         joinb = []
         j = len(names)-2
-        #for i = len(names) -2; i >=0; i--:
         while j >= 0:
           fk = fkfromtc[tableb][names[j]]
-          joinb.append(joinbackw(fk))
+          joinb.append(joinbackw(fk), aliasb, aliases[j])
           tableb = fk.tt
+          aliasb = aliases[j]
           j -= 1
         #print(f"tableb: {tableb}, table: {table}")
         if tableb != table:
           fk = findfk(tableb, table)
           #print(f"fk: {fk}")
-          joinb.append(joinbackw(fk))
+          joinb.append(joinbackw(fk, aliasb, None))
         #print(f"joinb: {joinb}")
         joinb.reverse()
         # append elements from joinb to join
         joins = joins + joinb
         table = names[len(names)-1]
+        tablealias = aliases[len(names)-1]
   
 
       if name in fkfromtc[table]:
         fk = fkfromtc[table][name][0]
         #print(fk)
-        joins.append(joinforw(fk))
+        joins.append(joinforw(fk, tablealias, alias))
         table = fk.tt
+        tablealias = alias
       else:
-        specificselect.append((table, name))
+        specificselect.append((table, tablealias, name))
 
 
     if w == "<":
       if i <= 1 or words[i-2] == ".": # todo index check
         names = []
+        aliases = []
 
 
       names.append(name)
+      aliases.append(alias)
 
 
     if i == len(words)-1:
       #print("backwards ende starting")
       #print(f"names: {names}")
       tableb = names[len(names)-1]
+      aliasb = aliases[len(names)-1]
       joinb = []
       j = len(names)-2
-      #for i = len(names) -2; i >=0; i--:
       while j >= 0:
         fk = fkfromtc[tableb][names[j]]
-        joinb.append(joinbackw(fk))
+        joinb.append(joinbackw(fk), aliasb, aliases[j])
         tableb = fk.tt
+        aliasb = aliases[j]
         j -= 1
       #print(f"tableb: {tableb}, table: {table}")
       if tableb != table:
         fk = findfk(tableb, table)
         #print(f"fk: {fk}")
-        joinb.append(joinbackw(fk))
+        joinb.append(joinbackw(fk, aliasb, None))
       #print(f"joinb: {joinb}")
       joinb.reverse()
       # append elements from joinb to join
       joins = joins + joinb
       table = names[len(names)-1]
+      tablealias = aliases[len(names)-1]
 
 
 
 
     i += 2
-  return table
+  return (table, tablealias)
 
 
 
@@ -168,10 +198,10 @@ def maketree(query):
 
 
 # run parses queries for node and its children starting from table
-def run(table, node):
-  t = join(table, node[0])
+def run(table, alias, node):
+  (t, a) = join(table, alias, node[0])
   for child in node[1:]:
-    run(t, child)
+    run(t, a, child)
 
 
 
@@ -191,9 +221,9 @@ fkfromtc = tb.fkfromtc(fka)
 fkfromt = tb.fkfromt(fka)
 #print(fkfromtc)
 i = re.search(r"[.<(]", select).start()
-selectfrom = select[0:i]
+(selectfrom, selectfromalias) = splitas(select[0:i])
 root = maketree(select[i:])
-run(selectfrom, root)
+run(selectfrom, selectfromalias, root)
 # for debugging without () notation
 #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
 #print(f"joins: {joins}")
@@ -202,8 +232,9 @@ selectget = "" # todo change
 if len(specificselect) == 0:
   selectget = "*"
 else:
-  selectget = ", ".join("%s.%s" % tup for tup in specificselect)
-gensql = f"select {selectget} from {selectfrom} \n{joinstring} \nwhere {where}"
+  #print(f"specificselect: {specificselect}")
+  selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
+gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
 print(gensql)
 db = dbcq(configchap)
 # print("generated query: " + sqlquery)
