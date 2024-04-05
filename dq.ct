@@ -215,7 +215,12 @@ das joins array healt die join strings.
 joins = []
 >>
 
-die funktionen um forward und backward zu joinen.
+die funktionen um forward und backward zu joinen. man waere vielleicht
+versucht die aliase in eine tabelle zu tun statt sie als parameter
+ueberall hin mitzunehmen, aber weil sie abhaengig sind von der
+position im query string (eine tabelle koennte mehrmals mit
+unterschiedlichen aliassen vorkommen) doch lieber mitnehmen statt
+tabelle.
 
 <<join help
 def joinforw(fk, asfrom, asto):
@@ -243,7 +248,7 @@ def one(a, b):
   return a
 >>
 
-und um den fk zu finden.
+die funktion um den fk zu finden.
 
 <<findfk
 # findfk finds foreign key from table a to table b
@@ -259,7 +264,21 @@ def findfk(a, b):
   return out
 >>
 
-und um innerhalb von queries zur postfix notation zu kommen. wie
+splitas parst tablename:alias.
+
+<<splitas
+# splitas returns tuple of tablename and alias
+def splitas(s):
+  a = s.split(":")
+  if len(a) > 2:
+    print("error: alias tables with name:alias")
+    exit
+  if len(a) == 1:
+    return (a[0], None)
+  return (a[0], a[1])
+>>
+
+innerhalb der queries verwenden wir postfix notation fuer . und <. wie
 noetig ist das?
 
 <<topostfix
@@ -282,8 +301,8 @@ wir importieren re.
 import re
 >>
 
-get the db config chapter and concatenate the rest of the args as
-query string
+in the command line interface, get the db config chapter and
+concatenate the rest of the args as query string.
 
 <<main
 configchap = sys.argv[1]
@@ -338,21 +357,6 @@ root = maketree(select[i:])
 run(selectfrom, selectfromalias, root)
 # for debugging without () notation
 #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
->>
-
-dq unterstuetzt tabellen aliase via name:alias. input parsing laeuft ueber
-splitas.
-
-<<splitas
-# splitas returns tuple of tablename and alias
-def splitas(s):
-  a = s.split(":")
-  if len(a) > 2:
-    print("error: alias tables with name:alias")
-    exit
-  if len(a) == 1:
-    return (a[0], None)
-  return (a[0], a[1])
 >>
 
 jede node im baum ist ein array, mit dem ersten element die node-query
