@@ -21,18 +21,22 @@ the structure of our program:
 <<dq.py
 
 <<import>>
-<<vars>>
 
-<<topostfix>>
 <<both>>
 <<one>>
 <<splitas>>
-<<findfk>>
+<<topostfix>>
 <<join help>>
-<<join>>
 <<maketree>>
-<<run>>
-<<selectwild>>
+
+class dq:
+  <<test>>
+  <<init>>
+  <<findfk>>
+  <<join>>
+  <<run>>
+  <<selectwild>>
+  <<q>>
 
 <<main>>
 
@@ -46,8 +50,7 @@ jeweils nach den/die operanden, vielleicht geht das abarbeiten dann
 einfacher.
 
 <<join
-def join(table, tablealias, query):
-  global joins
+def join(dq, table, tablealias, query):
   #print(f"query: {query}")
   #print(f"table: {table}")
   query = topostfix(query)
@@ -141,22 +144,18 @@ foreign key sein, es koennte auch ein normales feld oder * sein. wenn
 das der fall ist, merken wir es uns fuer den select.
 
 <<join/forwards
-      if name in fkfromtc[table]:
-        fk = fkfromtc[table][name][0]
+      if name in dq.fkfromtc[table]:
+        fk = dq.fkfromtc[table][name][0]
         #print(fk)
-        joins.append(joinforw(fk, tablealias, alias, lri))
+        dq.joins.append(joinforw(fk, tablealias, alias, lri))
         table = fk.tt
         tablealias = alias
       else:
-        specificselect.append((table, tablealias, name))
+        dq.specificselect.append((table, tablealias, name))
 >>
 
 weil forward joins direkt passieren und nicht auf die letzte tabelle
 warten muessen, brauchen wir sie nicht wie backward joins zu beenden.
-
-<<vars
-specificselect = []
->>
 
 backwards beginnen wir in dem wir die gemerkten namen leeren.
 
@@ -186,7 +185,7 @@ letzte gemerkte name ist tabellenname.
       joinb = []
       j = len(names)-2
       while j >= 0:
-        fk = fkfromtc[tableb][names[j]]
+        fk = dq.fkfromtc[tableb][names[j]]
         joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
         tableb = fk.tt
         aliasb = aliases[j]
@@ -207,7 +206,7 @@ seite) "scid". ein beispiel, wo der fk mit angegeben ist: bei
 <<
       #print(f"tableb: {tableb}, table: {table}")
       if tableb != table:
-        fk = findfk(tableb, table)
+        fk = dq.findfk(tableb, table)
         #print(f"fk: {fk}")
         joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
 >>
@@ -219,7 +218,7 @@ und appende sie.
       #print(f"joinb: {joinb}")
       joinb.reverse()
       # append elements from joinb to join
-      joins = joins + joinb
+      dq.joins = dq.joins + joinb
 >>
 
 der juengst gemerkte name ist der tabellenname von dem die naechste
@@ -229,12 +228,6 @@ vorher bei findfk brauchen.
 <<
       table = names[len(names)-1]
       tablealias = aliases[len(names)-1]
->>
-
-das joins array healt die join strings.
-
-<<vars
-joins = []
 >>
 
 die funktionen um forward und backward zu joinen. man weare vielleicht
@@ -274,9 +267,9 @@ die funktion um den fk zu finden.
 <<findfk
 # findfk finds foreign key from table a to table b
 # if more than one, error
-def findfk(a, b):
+def findfk(self, a, b):
   out = None
-  for k in fkfromt[a]:
+  for k in self.fkfromt[a]:
     if k.tt == b:
       if out != None: # there is already a fk
         print("error: more than one fk from a to b")
@@ -322,42 +315,17 @@ wir importieren re.
 import re
 >>
 
-in the command line interface, get the db config chapter and
-concatenate the rest of the args as query string.
-
-<<main
-configchap = sys.argv[1]
-inquery = ""
-for s in sys.argv[2:]:
-    inquery += s
-    inquery += " " # todo don't put to end
-# print("input query: " + inquery)
-tb = tbl(configchap)
->>
-
-import sys and tbl.
-
-<<import
-import sys
-from tbl import *
->>
+q handles the queries to dq.
 
 split the query string in select and where part on comma.
 
-<<main
-a = re.split(r"; +", inquery) # todo regex?
-select = a[0].lower() # is lowering ok here?
-#print(f"select: {select}")
-where = a[1]
->>
-
-get the foreign keys referenced by from-table and from-column.
-
-<<
-fka = tb.fk()
-fkfromtc = tb.fkfromtc(fka)
-fkfromt = tb.fkfromt(fka)
-#print(fkfromt)
+<<q
+# q handles queries to dq
+def q(dq, inquery):
+  a = re.split(r"; +", inquery) # todo regex?
+  select = a[0].lower() # is lowering ok here?
+  #print(f"select: {select}")
+  where = a[1]
 >>
 
 um mehrere joins an eine tabelle machen zu keonnen wuerden wir queries
@@ -372,25 +340,86 @@ dafuer bauen wir einen baum aus unserer inquery und parsen dann die
 we take the first named table as from clause (for now).
 
 <<
-i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
-select = select[i:]
-i = re.search(r"[.<{]", select).start()
-(selectfrom, selectfromalias) = splitas(select[0:i])
-root = maketree(select[i:])
-run(selectfrom, selectfromalias, root)
-# for debugging without {} notation
-#join(selectfrom, select[i:]) # ".sample.samplelocation.*")
+  i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
+  select = select[i:]
+  i = re.search(r"[.<{]", select).start()
+  (selectfrom, selectfromalias) = splitas(select[0:i])
+  root = maketree(select[i:])
+  dq.run(selectfrom, selectfromalias, root)
+  # for debugging without {} notation
+  #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
+>>
+
+jetzt puzzlen wir das sql zusammen. in specificselect steht was wir
+selecten moechten, in joins stehen die joins.
+
+<<
+  #print(f"joins: {joins}")
+  joinstring = " \n".join(dq.joins)
+>>
+
+wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es aliasse gibt, nimm aliasse.
+
+<<
+  selectget = "" # todo change
+  if len(dq.specificselect) == 0:
+    # selectget = "*"
+    selectget = dq.selectwild(selectfrom, selectfromalias)
+  else:
+    #print(f"specificselect: {specificselect}")
+    gets = []
+    for tri in dq.specificselect:
+      table = tri[0]
+      alias = tri[1]
+      col = tri[2]
+
+      # if col is wildcard, name each column explicitly
+      if col == "*":
+        gets.append(selectwild(table, alias))
+      else: # explicit named columns
+        s = "%s.%s" % (one(alias, table), col)
+        gets.append(f"{s} as '{s}'")
+    selectget = ", ".join(gets)
+    #selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
+>>
+
+selectget, selectfrom, joinstring und where landen im generierten sql.
+
+<<q
+  gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
+  print(gensql)
+>>
+
+send the query to the db and print the result.
+
+<<
+  # print("generated query: " + sqlquery)
+  return dq.db.qfad(gensql)
+  #print(json.dumps())
+>>
+
+we decided name each output field by tablename and column. wildcard
+selects like table.* need to be made explicit for each column.
+
+<<selectwild
+  # selectwild gives selectionstring for wildcard select
+  def selectwild(self, table, alias):
+    gets = []
+    for c in self.tb.columns(table):
+      s = "%s.%s" % (one(alias, table), c)
+      gets.append(f"{s} as '{s}'")
+    return ", ".join(gets)
 >>
 
 jede node im baum ist ein array, mit dem ersten element die node-query
 und die restlichen elemente die children.
 
 <<run
-# run parses queries for node and its children starting from table
-def run(table, alias, node):
-  (t, a) = join(table, alias, node[0])
-  for child in node[1:]:
-    run(t, a, child)
+  # run parses queries for node and its children starting from table
+  def run(dq, table, alias, node):
+    (t, a) = dq.join(table, alias, node[0])
+    for child in node[1:]:
+      dq.run(t, a, child)
 >>
 
 die strategie von maketree ist: alles vor der ersten "(" klammer ist
@@ -467,64 +496,61 @@ machen jeweils baeume aus ihnen.
   return out
 >>
 
-jetzt puzzlen wir das sql zusammen. in specificselect steht was wir
-selecten moechten, in joins stehen die joins.
+dq takes the database target as argument.
 
-<<main
-#print(f"joins: {joins}")
-joinstring = " \n".join(joins)
+<<init
+def __init__(dq, target):
+  dq.specificselect = []
+  dq.tb = tbl(target)
+  dq.db = dbcq(target)
+  dq.joins = []
+  <<.>>
 >>
 
-wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es aliasse gibt, nimm aliasse.
+get the foreign keys referenced by from-table and from-column.
 
 <<
-selectget = "" # todo change
-if len(specificselect) == 0:
-  # selectget = "*"
-  selectget = selectwild(selectfrom, selectfromalias)
-else:
-  #print(f"specificselect: {specificselect}")
-  gets = []
-  for tri in specificselect:
-    table = tri[0]
-    alias = tri[1]
-    col = tri[2]
-
-    # if col is wildcard, name each column explicitly
-    if col == "*":
-      gets.append(selectwild(table, alias))
-    else: # explicit named columns
-      s = "%s.%s" % (one(alias, table), col)
-      gets.append(f"{s} as '{s}'")
-  selectget = ", ".join(gets)
-  #selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
+  fka = dq.tb.fk()
+  dq.fkfromtc = dq.tb.fkfromtc(fka)
+  dq.fkfromt = dq.tb.fkfromt(fka)
+  #self.test()
+  #print(fkfromt)
 >>
 
-we decided name each output field by tablename and column. wildcard
-selects like table.* need to be made explicit for each column.
-
-<<selectwild
-# selectwild gives selectionstring for wildcard select
-def selectwild(table, alias):
-  gets = []
-  for c in tb.columns(table):
-    s = "%s.%s" % (one(alias, table), c)
-    gets.append(f"{s} as '{s}'")
-  return ", ".join(gets)
+<<test
+def test(self):
+  # is fkfromt reachable without self
+  print("")
+  print(specificselect)
+  #print(fkfromt)
 >>
 
-selectget, selectfrom, joinstring und where landen im generierten sql.
+import.
+
+<<import
+from tbl import *
+>>
+
+in the command line interface, get the db config chapter and
+concatenate the rest of the args as query string.
+
+todo not working.
 
 <<main
-gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
-print(gensql)
+if __name__ == "main":
+  print("main")
+  target = sys.argv[1]
+  inquery = ""
+  for s in sys.argv[2:]:
+      inquery += s
+      inquery += " " # todo don't put to end
+  # print("input query: " + inquery)
+  d = dq(target)
+  d.q(inquery)
 >>
 
-send the query to the db and print the result.
+import sys.
 
-<<
-db = dbcq(configchap)
-# print("generated query: " + sqlquery)
-print(db.qfad(gensql))
-#print(json.dumps())
+<<import
+import sys
 >>

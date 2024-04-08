@@ -1,6 +1,6 @@
 # dq
 
-usage: python dq.py \<db target\> \<query\>
+usage: python dqcli.py \<db target\> \<query\>
 
 dq gives dot-notation for foreign keys in sql queries.
 
@@ -21,8 +21,8 @@ query above could also be written as
 
 > select sample{<sampleidcont.psn, .location}; sampleidcont.psn = '59493038'
 
-the brackets {} mean that both '<sampleidcont.psn' and '.location' are grafted
-to sample.
+the brackets {} mean that both '<sampleidcont.psn' and '.location'
+hang on sample.
 
 ## setup
 
@@ -41,7 +41,6 @@ org and ct with ct/orgtoct and ct/cttoorg.
 
 ## missing
 
-- python api and cli interface
 - allow update etc? https://stackoverflow.com/a/1293347
 
 ## license

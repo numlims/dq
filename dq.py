@@ -1,25 +1,8 @@
 
 import re
-import sys
 from tbl import *
+import sys
 
-
-specificselect = []
-joins = []
-
-
-
-# topostfix puts the operators after their operands
-def topostfix(query):
-  a = re.split(r"([.<])", query) # use parethesis () to keep the delimiter
-  a = a[1:] # assume query starts with operator, then first word is '', drop it
-  # out = a[0]
-  out = ""
-  i = 0
-  while i < len(a):
-    out += a[i+1] + " " + a[i] + " " # a[i]: operator a[i+1]: name
-    i += 2
-  return out
 
 
 # both gives name and alias if alias is non null
@@ -45,16 +28,16 @@ def splitas(s):
   return (a[0], a[1])
 
 
-# findfk finds foreign key from table a to table b
-# if more than one, error
-def findfk(a, b):
-  out = None
-  for k in fkfromt[a]:
-    if k.tt == b:
-      if out != None: # there is already a fk
-        print("error: more than one fk from a to b")
-        return None
-      out = k
+# topostfix puts the operators after their operands
+def topostfix(query):
+  a = re.split(r"([.<])", query) # use parethesis () to keep the delimiter
+  a = a[1:] # assume query starts with operator, then first word is '', drop it
+  # out = a[0]
+  out = ""
+  i = 0
+  while i < len(a):
+    out += a[i+1] + " " + a[i] + " " # a[i]: operator a[i+1]: name
+    i += 2
   return out
 
 
@@ -63,113 +46,6 @@ def joinforw(fk, asfrom, asto, lri):
 
 def joinbackw(fk, asfrom, asto, lri):
   return lri + " join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
-
-
-def join(table, tablealias, query):
-  global joins
-  #print(f"query: {query}")
-  #print(f"table: {table}")
-  query = topostfix(query)
-  #print(f"topostfix query: '{query}'")
-  words = query.split(" ")
-  i = 1
-  # for i = 1; i < len(words); i += 2:
-  while i < len(words):
-    w = words[i]
-    if w == "." or w == "<":
-      (name, alias) = splitas(words[i-1])
-      lri = ""
-      if re.match(r"^\(l\)", name):
-        lri = "left"
-      elif re.match(r"^\(r\)", name): 
-        lri = "right"
-      elif re.match(r"^\(i\)", name):
-        lri = "inner"
-      # delete the lri tag from name
-      name = re.sub(r"^\(.\)", "", name)
-
-
-    if w == ".":
-      if i >= 0 and words[i-2] == "<": 
-        #print("backwards ende starting")
-        #print(f"names: {names}")
-        tableb = names[len(names)-1]
-        aliasb = aliases[len(names)-1]
-        joinb = []
-        j = len(names)-2
-        while j >= 0:
-          fk = fkfromtc[tableb][names[j]]
-          joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
-          tableb = fk.tt
-          aliasb = aliases[j]
-          j -= 1
-        #print(f"tableb: {tableb}, table: {table}")
-        if tableb != table:
-          fk = findfk(tableb, table)
-          #print(f"fk: {fk}")
-          joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
-        #print(f"joinb: {joinb}")
-        joinb.reverse()
-        # append elements from joinb to join
-        joins = joins + joinb
-        table = names[len(names)-1]
-        tablealias = aliases[len(names)-1]
-  
-
-      if name in fkfromtc[table]:
-        fk = fkfromtc[table][name][0]
-        #print(fk)
-        joins.append(joinforw(fk, tablealias, alias, lri))
-        table = fk.tt
-        tablealias = alias
-      else:
-        specificselect.append((table, tablealias, name))
-
-
-    if w == "<":
-      if i <= 1 or words[i-2] == ".": # todo index check
-        names = []
-        aliases = []
-        lris = []
-
-
-      names.append(name)
-      aliases.append(alias)
-      lris.append(lri)
-
-
-    if i == len(words)-1:
-      #print("backwards ende starting")
-      #print(f"names: {names}")
-      tableb = names[len(names)-1]
-      aliasb = aliases[len(names)-1]
-      joinb = []
-      j = len(names)-2
-      while j >= 0:
-        fk = fkfromtc[tableb][names[j]]
-        joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
-        tableb = fk.tt
-        aliasb = aliases[j]
-        j -= 1
-      #print(f"tableb: {tableb}, table: {table}")
-      if tableb != table:
-        fk = findfk(tableb, table)
-        #print(f"fk: {fk}")
-        joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
-      #print(f"joinb: {joinb}")
-      joinb.reverse()
-      # append elements from joinb to join
-      joins = joins + joinb
-      table = names[len(names)-1]
-      tablealias = aliases[len(names)-1]
-
-
-
-
-    i += 2
-  return (table, tablealias)
-
-
 
 
 # maketree makes a tree from query
@@ -210,74 +86,218 @@ def maketree(query):
 
 
 
-# run parses queries for node and its children starting from table
-def run(table, alias, node):
-  (t, a) = join(table, alias, node[0])
-  for child in node[1:]:
-    run(t, a, child)
+
+class dq:
+  def test(self):
+    # is fkfromt reachable without self
+    print("")
+    print(specificselect)
+    #print(fkfromt)
+  
+
+  def __init__(dq, target):
+    dq.specificselect = []
+    dq.tb = tbl(target)
+    dq.db = dbcq(target)
+    dq.joins = []
+    fka = dq.tb.fk()
+    dq.fkfromtc = dq.tb.fkfromtc(fka)
+    dq.fkfromt = dq.tb.fkfromt(fka)
+    #self.test()
+    #print(fkfromt)
+  
+
+  
+
+  # findfk finds foreign key from table a to table b
+  # if more than one, error
+  def findfk(self, a, b):
+    out = None
+    for k in self.fkfromt[a]:
+      if k.tt == b:
+        if out != None: # there is already a fk
+          print("error: more than one fk from a to b")
+          return None
+        out = k
+    return out
+  
+
+  def join(dq, table, tablealias, query):
+    #print(f"query: {query}")
+    #print(f"table: {table}")
+    query = topostfix(query)
+    #print(f"topostfix query: '{query}'")
+    words = query.split(" ")
+    i = 1
+    # for i = 1; i < len(words); i += 2:
+    while i < len(words):
+      w = words[i]
+      if w == "." or w == "<":
+        (name, alias) = splitas(words[i-1])
+        lri = ""
+        if re.match(r"^\(l\)", name):
+          lri = "left"
+        elif re.match(r"^\(r\)", name): 
+          lri = "right"
+        elif re.match(r"^\(i\)", name):
+          lri = "inner"
+        # delete the lri tag from name
+        name = re.sub(r"^\(.\)", "", name)
+  
+
+      if w == ".":
+        if i >= 0 and words[i-2] == "<": 
+          #print("backwards ende starting")
+          #print(f"names: {names}")
+          tableb = names[len(names)-1]
+          aliasb = aliases[len(names)-1]
+          joinb = []
+          j = len(names)-2
+          while j >= 0:
+            fk = dq.fkfromtc[tableb][names[j]]
+            joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
+            tableb = fk.tt
+            aliasb = aliases[j]
+            j -= 1
+          #print(f"tableb: {tableb}, table: {table}")
+          if tableb != table:
+            fk = dq.findfk(tableb, table)
+            #print(f"fk: {fk}")
+            joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
+          #print(f"joinb: {joinb}")
+          joinb.reverse()
+          # append elements from joinb to join
+          dq.joins = dq.joins + joinb
+          table = names[len(names)-1]
+          tablealias = aliases[len(names)-1]
+    
+
+        if name in dq.fkfromtc[table]:
+          fk = dq.fkfromtc[table][name][0]
+          #print(fk)
+          dq.joins.append(joinforw(fk, tablealias, alias, lri))
+          table = fk.tt
+          tablealias = alias
+        else:
+          dq.specificselect.append((table, tablealias, name))
+  
+
+      if w == "<":
+        if i <= 1 or words[i-2] == ".": # todo index check
+          names = []
+          aliases = []
+          lris = []
+  
+
+        names.append(name)
+        aliases.append(alias)
+        lris.append(lri)
+  
+
+      if i == len(words)-1:
+        #print("backwards ende starting")
+        #print(f"names: {names}")
+        tableb = names[len(names)-1]
+        aliasb = aliases[len(names)-1]
+        joinb = []
+        j = len(names)-2
+        while j >= 0:
+          fk = dq.fkfromtc[tableb][names[j]]
+          joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
+          tableb = fk.tt
+          aliasb = aliases[j]
+          j -= 1
+        #print(f"tableb: {tableb}, table: {table}")
+        if tableb != table:
+          fk = dq.findfk(tableb, table)
+          #print(f"fk: {fk}")
+          joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
+        #print(f"joinb: {joinb}")
+        joinb.reverse()
+        # append elements from joinb to join
+        dq.joins = dq.joins + joinb
+        table = names[len(names)-1]
+        tablealias = aliases[len(names)-1]
+  
+
+  
+
+      i += 2
+    return (table, tablealias)
+  
+
+  
+
+  # run parses queries for node and its children starting from table
+  def run(dq, table, alias, node):
+    (t, a) = dq.join(table, alias, node[0])
+    for child in node[1:]:
+      dq.run(t, a, child)
 
 
-# selectwild gives selectionstring for wildcard select
-def selectwild(table, alias):
-  gets = []
-  for c in tb.columns(table):
-    s = "%s.%s" % (one(alias, table), c)
-    gets.append(f"{s} as '{s}'")
-  return ", ".join(gets)
-
-
-
-configchap = sys.argv[1]
-inquery = ""
-for s in sys.argv[2:]:
-    inquery += s
-    inquery += " " # todo don't put to end
-# print("input query: " + inquery)
-tb = tbl(configchap)
-a = re.split(r"; +", inquery) # todo regex?
-select = a[0].lower() # is lowering ok here?
-#print(f"select: {select}")
-where = a[1]
-fka = tb.fk()
-fkfromtc = tb.fkfromtc(fka)
-fkfromt = tb.fkfromt(fka)
-#print(fkfromt)
-i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
-select = select[i:]
-i = re.search(r"[.<{]", select).start()
-(selectfrom, selectfromalias) = splitas(select[0:i])
-root = maketree(select[i:])
-run(selectfrom, selectfromalias, root)
-# for debugging without {} notation
-#join(selectfrom, select[i:]) # ".sample.samplelocation.*")
-#print(f"joins: {joins}")
-joinstring = " \n".join(joins)
-selectget = "" # todo change
-if len(specificselect) == 0:
-  # selectget = "*"
-  selectget = selectwild(selectfrom, selectfromalias)
-else:
-  #print(f"specificselect: {specificselect}")
-  gets = []
-  for tri in specificselect:
-    table = tri[0]
-    alias = tri[1]
-    col = tri[2]
-
-    # if col is wildcard, name each column explicitly
-    if col == "*":
-      gets.append(selectwild(table, alias))
-    else: # explicit named columns
-      s = "%s.%s" % (one(alias, table), col)
+  # selectwild gives selectionstring for wildcard select
+  def selectwild(self, table, alias):
+    gets = []
+    for c in self.tb.columns(table):
+      s = "%s.%s" % (one(alias, table), c)
       gets.append(f"{s} as '{s}'")
-  selectget = ", ".join(gets)
-  #selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
-gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
-print(gensql)
-db = dbcq(configchap)
-# print("generated query: " + sqlquery)
-print(db.qfad(gensql))
-#print(json.dumps())
+    return ", ".join(gets)
+
+
+  # q handles queries to dq
+  def q(dq, inquery):
+    a = re.split(r"; +", inquery) # todo regex?
+    select = a[0].lower() # is lowering ok here?
+    #print(f"select: {select}")
+    where = a[1]
+    i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
+    select = select[i:]
+    i = re.search(r"[.<{]", select).start()
+    (selectfrom, selectfromalias) = splitas(select[0:i])
+    root = maketree(select[i:])
+    dq.run(selectfrom, selectfromalias, root)
+    # for debugging without {} notation
+    #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
+    #print(f"joins: {joins}")
+    joinstring = " \n".join(dq.joins)
+    selectget = "" # todo change
+    if len(dq.specificselect) == 0:
+      # selectget = "*"
+      selectget = dq.selectwild(selectfrom, selectfromalias)
+    else:
+      #print(f"specificselect: {specificselect}")
+      gets = []
+      for tri in dq.specificselect:
+        table = tri[0]
+        alias = tri[1]
+        col = tri[2]
+  
+        # if col is wildcard, name each column explicitly
+        if col == "*":
+          gets.append(selectwild(table, alias))
+        else: # explicit named columns
+          s = "%s.%s" % (one(alias, table), col)
+          gets.append(f"{s} as '{s}'")
+      selectget = ", ".join(gets)
+      #selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
+    gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
+    print(gensql)
+    # print("generated query: " + sqlquery)
+    return dq.db.qfad(gensql)
+    #print(json.dumps())
+  
+
+
+if __name__ == "main":
+  print("main")
+  target = sys.argv[1]
+  inquery = ""
+  for s in sys.argv[2:]:
+      inquery += s
+      inquery += " " # todo don't put to end
+  # print("input query: " + inquery)
+  d = dq(target)
+  d.q(inquery)
 
 
 
