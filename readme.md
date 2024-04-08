@@ -34,7 +34,8 @@ org and ct with ct/orgtoct and ct/cttoorg.
 ## missing
 
 - maybe prefix all returned values with the name/alias of their table?
-- allow update?
+- python api and cli interface
+- allow update etc? https://stackoverflow.com/a/1293347
 
 ## license
 

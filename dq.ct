@@ -6,7 +6,7 @@ dq gives dot-notation for sql foreign keys in queries.
 
 it supports queries like
 
-sampleidbox.sample.location; sampleidbox.psn =
+select sampleidbox.sample.location; sampleidbox.psn =
 '4020189864'
 
 the same query in sql would be:
@@ -215,12 +215,11 @@ das joins array healt die join strings.
 joins = []
 >>
 
-die funktionen um forward und backward zu joinen. man waere vielleicht
+die funktionen um forward und backward zu joinen. man weare vielleicht
 versucht die aliase in eine tabelle zu tun statt sie als parameter
-ueberall hin mitzunehmen, aber weil sie abhaengig sind von der
-position im query string (eine tabelle koennte mehrmals mit
-unterschiedlichen aliassen vorkommen) doch lieber mitnehmen statt
-tabelle.
+ueberall hin mitzunehmen, aber weil sie abheangig sind von der
+position im query string (eine tabelle keonnte mehrmals mit
+unterschiedlichen aliassen vorkommen) doch lieber mitnehmen.
 
 <<join help
 def joinforw(fk, asfrom, asto):
@@ -351,6 +350,8 @@ dafuer bauen wir einen baum aus unserer inquery und parsen dann die
 we take the first named table as from clause (for now).
 
 <<
+i = re.search(r"^(?i)select +", select).end() # (?i) case insensitive
+select = select[i:]
 i = re.search(r"[.<(]", select).start()
 (selectfrom, selectfromalias) = splitas(select[0:i])
 root = maketree(select[i:])

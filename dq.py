@@ -220,6 +220,8 @@ fka = tb.fk()
 fkfromtc = tb.fkfromtc(fka)
 fkfromt = tb.fkfromt(fka)
 #print(fkfromtc)
+i = re.search(r"^(?i)select +", select).end() # (?i) case insensitive
+select = select[i:]
 i = re.search(r"[.<(]", select).start()
 (selectfrom, selectfromalias) = splitas(select[0:i])
 root = maketree(select[i:])
