@@ -41,7 +41,8 @@ org and ct with ct/orgtoct and ct/cttoorg.
 
 ## missing
 
-- allow update etc? https://stackoverflow.com/a/1293347
+- maybe a prefixstrip option to query and output without prefix common to tablenames.
+- maybe update etc? https://stackoverflow.com/a/1293347 for now you can update, insert and delete via tbl
 
 ## license
 
