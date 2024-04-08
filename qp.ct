@@ -1,8 +1,11 @@
-# dq
+# qp
 
-usage: python dq.py <db target> <query>
+usage:
 
-dq gives dot-notation for sql foreign keys in queries.
+qp = qp(<target>)
+print(qp.q(<query>))
+
+qp gives path-notation for foreign keys in sql queries.
 
 it supports queries like
 
@@ -18,7 +21,7 @@ select s.* from sampleidbox sidb
 
 the structure of our program:
 
-<<dq.py
+<<qp.py
 
 <<import>>
 
@@ -29,7 +32,7 @@ the structure of our program:
 <<join help>>
 <<maketree>>
 
-class dq:
+class qp:
   <<test>>
   <<init>>
   <<findfk>>
@@ -42,7 +45,7 @@ class dq:
 
 >>
 
-dq joint foreign keys via "." und "<". bei a.b ist der foreign
+qp joint foreign keys via "." und "<". bei a.b ist der foreign
 key von a nach b, bei a<b ist der foreign key von b nach a.
 
 in join nehmen wir die query in standardform und stellen den operator
@@ -50,7 +53,7 @@ jeweils nach den/die operanden, vielleicht geht das abarbeiten dann
 einfacher.
 
 <<join
-def join(dq, table, tablealias, query):
+def join(qp, table, tablealias, query):
   #print(f"query: {query}")
   #print(f"table: {table}")
   query = topostfix(query)
@@ -144,14 +147,14 @@ foreign key sein, es koennte auch ein normales feld oder * sein. wenn
 das der fall ist, merken wir es uns fuer den select.
 
 <<join/forwards
-      if name in dq.fkfromtc[table]:
-        fk = dq.fkfromtc[table][name][0]
+      if name in qp.fkfromtc[table]:
+        fk = qp.fkfromtc[table][name][0]
         #print(fk)
-        dq.joins.append(joinforw(fk, tablealias, alias, lri))
+        qp.joins.append(joinforw(fk, tablealias, alias, lri))
         table = fk.tt
         tablealias = alias
       else:
-        dq.specificselect.append((table, tablealias, name))
+        qp.specificselect.append((table, tablealias, name))
 >>
 
 weil forward joins direkt passieren und nicht auf die letzte tabelle
@@ -185,7 +188,7 @@ letzte gemerkte name ist tabellenname.
       joinb = []
       j = len(names)-2
       while j >= 0:
-        fk = dq.fkfromtc[tableb][names[j]]
+        fk = qp.fkfromtc[tableb][names[j]]
         joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
         tableb = fk.tt
         aliasb = aliases[j]
@@ -206,7 +209,7 @@ seite) "scid". ein beispiel, wo der fk mit angegeben ist: bei
 <<
       #print(f"tableb: {tableb}, table: {table}")
       if tableb != table:
-        fk = dq.findfk(tableb, table)
+        fk = qp.findfk(tableb, table)
         #print(f"fk: {fk}")
         joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
 >>
@@ -218,7 +221,7 @@ und appende sie.
       #print(f"joinb: {joinb}")
       joinb.reverse()
       # append elements from joinb to join
-      dq.joins = dq.joins + joinb
+      qp.joins = qp.joins + joinb
 >>
 
 der juengst gemerkte name ist der tabellenname von dem die naechste
@@ -315,13 +318,13 @@ wir importieren re.
 import re
 >>
 
-q handles the queries to dq.
+q handles the queries to qp.
 
 split the query string in select and where part on comma.
 
 <<q
-# q handles queries to dq
-def q(dq, inquery):
+# q handles queries to qp
+def q(qp, inquery):
   a = re.split(r"; +", inquery) # todo regex?
   select = a[0].lower() # is lowering ok here?
   #print(f"select: {select}")
@@ -345,7 +348,7 @@ we take the first named table as from clause (for now).
   i = re.search(r"[.<{]", select).start()
   (selectfrom, selectfromalias) = splitas(select[0:i])
   root = maketree(select[i:])
-  dq.run(selectfrom, selectfromalias, root)
+  qp.run(selectfrom, selectfromalias, root)
   # for debugging without {} notation
   #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
 >>
@@ -355,20 +358,20 @@ selecten moechten, in joins stehen die joins.
 
 <<
   #print(f"joins: {joins}")
-  joinstring = " \n".join(dq.joins)
+  joinstring = " \n".join(qp.joins)
 >>
 
 wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es aliasse gibt, nimm aliasse.
 
 <<
   selectget = "" # todo change
-  if len(dq.specificselect) == 0:
+  if len(qp.specificselect) == 0:
     # selectget = "*"
-    selectget = dq.selectwild(selectfrom, selectfromalias)
+    selectget = qp.selectwild(selectfrom, selectfromalias)
   else:
     #print(f"specificselect: {specificselect}")
     gets = []
-    for tri in dq.specificselect:
+    for tri in qp.specificselect:
       table = tri[0]
       alias = tri[1]
       col = tri[2]
@@ -394,7 +397,7 @@ send the query to the db and print the result.
 
 <<
   # print("generated query: " + sqlquery)
-  return dq.db.qfad(gensql)
+  return qp.db.qfad(gensql)
   #print(json.dumps())
 >>
 
@@ -416,10 +419,10 @@ und die restlichen elemente die children.
 
 <<run
   # run parses queries for node and its children starting from table
-  def run(dq, table, alias, node):
-    (t, a) = dq.join(table, alias, node[0])
+  def run(qp, table, alias, node):
+    (t, a) = qp.join(table, alias, node[0])
     for child in node[1:]:
-      dq.run(t, a, child)
+      qp.run(t, a, child)
 >>
 
 die strategie von maketree ist: alles vor der ersten "(" klammer ist
@@ -496,23 +499,23 @@ machen jeweils baeume aus ihnen.
   return out
 >>
 
-dq takes the database target as argument.
+qp takes the database target as argument.
 
 <<init
-def __init__(dq, target):
-  dq.specificselect = []
-  dq.tb = tbl(target)
-  dq.db = dbcq(target)
-  dq.joins = []
+def __init__(qp, target):
+  qp.specificselect = []
+  qp.tb = tbl(target)
+  qp.db = dbcq(target)
+  qp.joins = []
   <<.>>
 >>
 
 get the foreign keys referenced by from-table and from-column.
 
 <<
-  fka = dq.tb.fk()
-  dq.fkfromtc = dq.tb.fkfromtc(fka)
-  dq.fkfromt = dq.tb.fkfromt(fka)
+  fka = qp.tb.fk()
+  qp.fkfromtc = qp.tb.fkfromtc(fka)
+  qp.fkfromt = qp.tb.fkfromt(fka)
   #self.test()
   #print(fkfromt)
 >>
@@ -545,8 +548,8 @@ if __name__ == "main":
       inquery += s
       inquery += " " # todo don't put to end
   # print("input query: " + inquery)
-  d = dq(target)
-  d.q(inquery)
+  q = qp(target)
+  q.q(inquery)
 >>
 
 import sys.

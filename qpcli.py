@@ -1,7 +1,7 @@
-# dqcli
-# usage: python dqcli.py <target> <query>
+# qpcli
+# usage: python qpcli.py <target> <query>
 
-from dq import *
+from qp import *
 import sys
 
 target = sys.argv[1]
@@ -10,5 +10,5 @@ for s in sys.argv[2:]:
     inquery += s
     inquery += " " # todo don't put to end
     # print("input query: " + inquery)
-d = dq(target)
-print(d.q(inquery))
+q = qp(target)
+print(q.q(inquery))

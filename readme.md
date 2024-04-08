@@ -1,8 +1,8 @@
-# dq
+# qp
 
-usage: python dqcli.py \<db target\> \<query\>
+usage: python qpcli.py \<db target\> \<query\>
 
-dq gives dot-notation for foreign keys in sql queries.
+qp gives path-notation for foreign keys in sql queries.
 
 it supports queries like
 
@@ -34,7 +34,7 @@ to make, say
 make
 ```
 
-the code is in dq.ct. if you'd rather edit
+the code is in qp.ct. if you'd rather edit
 [.org](https://orgmode.org/manual/Working-with-Source-Code.html) than
 [.ct](https://github.com/tnustrings/codetext), you can convert between
 org and ct with ct/orgtoct and ct/cttoorg.
