@@ -58,11 +58,11 @@ def findfk(a, b):
   return out
 
 
-def joinforw(fk, asfrom, asto):
-  return "join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
+def joinforw(fk, asfrom, asto, lri):
+  return lri + " join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
 
-def joinbackw(fk, asfrom, asto):
-  return "join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
+def joinbackw(fk, asfrom, asto, lri):
+  return lri + " join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
 
 
 def join(table, tablealias, query):
@@ -78,6 +78,17 @@ def join(table, tablealias, query):
     w = words[i]
     if w == "." or w == "<":
       (name, alias) = splitas(words[i-1])
+      lri = ""
+      if re.match(r"^\(l\)", name):
+        lri = "left"
+      elif re.match(r"^\(r\)", name): 
+        lri = "right"
+      elif re.match(r"^\(i\)", name):
+        lri = "inner"
+      # delete the lri tag from name
+      name = re.sub(r"^\(.\)", "", name)
+
+
     if w == ".":
       if i >= 0 and words[i-2] == "<": 
         #print("backwards ende starting")
@@ -88,7 +99,7 @@ def join(table, tablealias, query):
         j = len(names)-2
         while j >= 0:
           fk = fkfromtc[tableb][names[j]]
-          joinb.append(joinbackw(fk), aliasb, aliases[j])
+          joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
           tableb = fk.tt
           aliasb = aliases[j]
           j -= 1
@@ -96,7 +107,7 @@ def join(table, tablealias, query):
         if tableb != table:
           fk = findfk(tableb, table)
           #print(f"fk: {fk}")
-          joinb.append(joinbackw(fk, aliasb, None))
+          joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
         #print(f"joinb: {joinb}")
         joinb.reverse()
         # append elements from joinb to join
@@ -108,7 +119,7 @@ def join(table, tablealias, query):
       if name in fkfromtc[table]:
         fk = fkfromtc[table][name][0]
         #print(fk)
-        joins.append(joinforw(fk, tablealias, alias))
+        joins.append(joinforw(fk, tablealias, alias, lri))
         table = fk.tt
         tablealias = alias
       else:
@@ -119,10 +130,12 @@ def join(table, tablealias, query):
       if i <= 1 or words[i-2] == ".": # todo index check
         names = []
         aliases = []
+        lris = []
 
 
       names.append(name)
       aliases.append(alias)
+      lris.append(lri)
 
 
     if i == len(words)-1:
@@ -134,7 +147,7 @@ def join(table, tablealias, query):
       j = len(names)-2
       while j >= 0:
         fk = fkfromtc[tableb][names[j]]
-        joinb.append(joinbackw(fk), aliasb, aliases[j])
+        joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
         tableb = fk.tt
         aliasb = aliases[j]
         j -= 1
@@ -142,7 +155,7 @@ def join(table, tablealias, query):
       if tableb != table:
         fk = findfk(tableb, table)
         #print(f"fk: {fk}")
-        joinb.append(joinbackw(fk, aliasb, None))
+        joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
       #print(f"joinb: {joinb}")
       joinb.reverse()
       # append elements from joinb to join

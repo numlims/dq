@@ -57,7 +57,7 @@ def join(table, tablealias, query):
 >>
 
 wir starten beim ersten operator und nehmen in zweierschritten je ein
-operand/operator paar # todo was wenn das ein < ist
+operand/operator paar. # todo was wenn das ein < ist
 
 <<
   i = 1
@@ -75,13 +75,31 @@ namen.
 <<
     if w == "." or w == "<":
       (name, alias) = splitas(words[i-1])
+      <<.>>
+>>
+
+precede namen mit [l], [r] und [i] fuer left, right und inner
+joins. das extrahieren wir hier aus dem namen in die variable lri,
+damit der name nach clean fuer die fk tables genutzt werden kann. lri
+uebergeben wir spaeter an joinbackw und joinforw.
+
+<<
+      lri = ""
+      if re.match(r"^\(l\)", name):
+        lri = "left"
+      elif re.match(r"^\(r\)", name): 
+        lri = "right"
+      elif re.match(r"^\(i\)", name):
+        lri = "inner"
+      # delete the lri tag from name
+      name = re.sub(r"^\(.\)", "", name)
 >>
 
 wir sind an einem "." (forward) operator. wenn der letzte operator ein
 "<" (backward) war, beende backwards. mach dann die normalen forward
 schritte.
 
-<<
+<<..
     if w == ".":
       if i >= 0 and words[i-2] == "<": 
         <<backwards ende>>
@@ -126,14 +144,15 @@ das der fall ist, merken wir es uns fuer den select.
       if name in fkfromtc[table]:
         fk = fkfromtc[table][name][0]
         #print(fk)
-        joins.append(joinforw(fk, tablealias, alias))
+        joins.append(joinforw(fk, tablealias, alias, lri))
         table = fk.tt
         tablealias = alias
       else:
         specificselect.append((table, tablealias, name))
 >>
 
-forward joins muessen wir im unterschied zu backward joins nicht beenden.
+weil forward joins direkt passieren und nicht auf die letzte tabelle
+warten muessen, brauchen wir sie nicht wie backward joins zu beenden.
 
 <<vars
 specificselect = []
@@ -144,6 +163,7 @@ backwards beginnen wir in dem wir die gemerkten namen leeren.
 <<join/begin backwards
         names = []
         aliases = []
+        lris = []
 >>
 
 wenn wir backwards gehen merken wir uns den namen.
@@ -151,6 +171,7 @@ wenn wir backwards gehen merken wir uns den namen.
 <<join/backwards
       names.append(name)
       aliases.append(alias)
+      lris.append(lri)
 >>
 
 backwards beenden wir indem wir die gemerkten namen vom vorletzten zum
@@ -166,7 +187,7 @@ letzte gemerkte name ist tabellenname.
       j = len(names)-2
       while j >= 0:
         fk = fkfromtc[tableb][names[j]]
-        joinb.append(joinbackw(fk), aliasb, aliases[j])
+        joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
         tableb = fk.tt
         aliasb = aliases[j]
         j -= 1
@@ -188,7 +209,7 @@ seite) "scid". ein beispiel, wo der fk mit angegeben ist: bei
       if tableb != table:
         fk = findfk(tableb, table)
         #print(f"fk: {fk}")
-        joinb.append(joinbackw(fk, aliasb, None))
+        joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
 >>
 
 reverse die backward joins (dann stehen sie wieder in query reihenfolge)
@@ -223,11 +244,11 @@ position im query string (eine tabelle keonnte mehrmals mit
 unterschiedlichen aliassen vorkommen) doch lieber mitnehmen.
 
 <<join help
-def joinforw(fk, asfrom, asto):
-  return "join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
+def joinforw(fk, asfrom, asto, lri):
+  return lri + " join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
 
-def joinbackw(fk, asfrom, asto):
-  return "join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
+def joinbackw(fk, asfrom, asto, lri):
+  return lri + " join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
 >>
 
 both gibt die aliase mit aus wenn sie nicht none sind.
