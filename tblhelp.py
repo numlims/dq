@@ -78,18 +78,38 @@ class tblhelp:
             out.append(row["column_name"])
         return out
 
-    # columns returns the column names of table as a string array
-    def columns(table):
-        result = self.db.qfad("""
+    # columns returns the column names of table as an array of strings,
+    # if no table given, return dict by table with columns for every table 
+    def columns(self, table=None):
+        # return for all tables with columns
+        if table==None:
+            result = self.db.qfad("""
+            select table_name, column_name from information_schema.columns 
+            order by ordinal_position""")
+            tables = self.tables()
+            out = {}
+            # make an entry for every table in the dict, even if it doesn't have a column
+            for table in tables:
+                out[table] = []
+            for row in result:
+                t = row["table_name"]
+                c = row["column_name"]
+                if t not in tables: # e.g. schema_version is in result but not in tables
+                    continue
+                out[t].append(c)
+            return out
+        
+        else: # return columns for specific table
+            result = self.db.qfad("""
         select column_name from information_schema.columns 
         where table_name = ? order by ordinal_position""", table)
-        out = []
-        for row in result:
-            out.append(row["column_name"])
-        return out
+            out = []
+            for row in result:
+                out.append(row["column_name"])
+            return out
 
     # columntypes returns a dict of columnnames and types for table
-    def columntypes(table):
+    def columntypes(self, table):
         # query from https://www.mytecbits.com/microsoft/sql-server/list-of-column-names
         query = """
         SELECT
@@ -105,3 +125,17 @@ class tblhelp:
         for row in result:
             out[row["name"]] = row["type"]
         return out
+
+
+    # columns returns the columns for each table
+    def columnst(self):
+        return self.th.columnst()
+
+    # tables gives the names of the tables in the db
+    def tables(self):
+        result = self.db.qfad("exec sp_tables")
+        tables = []
+        for row in result:
+            if row["table_owner"] == "dbo":
+                tables.append(row["table_name"])
+        return tables

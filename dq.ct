@@ -32,6 +32,7 @@ the structure of our program:
 <<join>>
 <<maketree>>
 <<run>>
+<<selectwild>>
 
 <<main>>
 
@@ -335,7 +336,7 @@ get the foreign keys referenced by from-table and from-column.
 fka = tb.fk()
 fkfromtc = tb.fkfromtc(fka)
 fkfromt = tb.fkfromt(fka)
-#print(fkfromtc)
+#print(fkfromt)
 >>
 
 um mehrere joins an eine tabelle machen zu keonnen wuerden wir queries
@@ -350,7 +351,7 @@ dafuer bauen wir einen baum aus unserer inquery und parsen dann die
 we take the first named table as from clause (for now).
 
 <<
-i = re.search(r"^(?i)select +", select).end() # (?i) case insensitive
+i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
 select = select[i:]
 i = re.search(r"[.<(]", select).start()
 (selectfrom, selectfromalias) = splitas(select[0:i])
@@ -458,15 +459,42 @@ wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es alias
 <<
 selectget = "" # todo change
 if len(specificselect) == 0:
-  selectget = "*"
+  # selectget = "*"
+  selectget = selectwild(selectfrom, selectfromalias)
 else:
   #print(f"specificselect: {specificselect}")
-  selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
+  gets = []
+  for tri in specificselect:
+    table = tri[0]
+    alias = tri[1]
+    col = tri[2]
+
+    # if col is wildcard, name each column explicitly
+    if col == "*":
+      gets.append(selectwild(table, alias))
+    else: # explicit named columns
+      s = "%s.%s" % (one(alias, table), col)
+      gets.append(f"{s} as '{s}'")
+  selectget = ", ".join(gets)
+  #selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
+>>
+
+we decided name each output field by tablename and column. wildcard
+selects like table.* need to be made explicit for each column.
+
+<<selectwild
+# selectwild gives selectionstring for wildcard select
+def selectwild(table, alias):
+  gets = []
+  for c in tb.columns(table):
+    s = "%s.%s" % (one(alias, table), c)
+    gets.append(f"{s} as '{s}'")
+  return ", ".join(gets)
 >>
 
 selectget, selectfrom, joinstring und where landen im generierten sql.
 
-<<
+<<main
 gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
 print(gensql)
 >>

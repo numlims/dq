@@ -8,7 +8,7 @@
 # fk
 # fkfromt
 # fkfromtc
-# (fktot)
+# fktot
 # (fktotc)
 # identities
 # pk
@@ -31,25 +31,26 @@ class tbl:
         self.db = dbcq(target)
         self.th = tblhelp(self.db)
 
-    # columns returns the column names of table
-    def columns(self, table):
-        return th.columns(table)
+    # columns returns the column names of table as an array of strings,
+    # if no table given, return dict by table with columns for every table 
+    def columns(self, table=None):
+        return self.th.columns(table)
 
     # columntypes gives the column schema for tablename
     def columntypes(self, tablename):
-        return jsonify(th.columntypes(tablename))
+        return self.th.columntypes(tablename)
 
     # deletefrom deletes the row in table identified by the post parameters
     # if there are two rows with exactly the same values, it deletes both 
     def deletefrom(self, table, row):
         args = []
-        q = "delete from [" + table + "] where " + th.wherestring(row, args)
+        q = "delete from [" + table + "] where " + self.th.wherestring(row, args)
         # do the deleting
         self.db.query(q, args) # todo uncomment
 
     # identities gives list of identity (auto-increment) columns for table
     def identities(self, table):
-        identities = th.identity_keys(table)
+        identities = self.th.identity_keys(table)
         return identities
 
     # insert inserts a line in a table
@@ -95,7 +96,9 @@ class tbl:
         # output foreign as objects
         a = []
         for row in rows:
-            a.append(fk(row["ft"].lower(), row["fc"].lower(), row["tt"].lower(), row["tc"].lower())) # is lower() here a good idea?
+            # a.append(fk(row["ft"].lower(), row["fc"].lower(), row["tt"].lower(), row["tc"].lower())) # is lower() here a good idea?
+            a.append(fk(row["ft"], row["fc"], row["tt"], row["tc"])) # is lower() here a good idea?
+            # a.append(row)
         return a
 
     # fkfromt returns foreign key array as dict indexed by from-table
@@ -120,20 +123,35 @@ class tbl:
             fktc[key.ft][key.fc].append(key)
         return fktc
 
-    # also fktot and fktotc?
+    # fktot returns foreign keys by to-table
+    def fktot(self, fka):
+        out = {}
+        for key in fka:
+            if not key.tt in out:
+                out[key.tt] = []
+            out[key.tt].append(key)
+        return out
+
+    # fktot returns foreign keys by to-table and to-column
+    def fktotc(self, fka):
+        out = {}
+        for key in fka:
+            if not key.tt in out:
+                out[key.tt] = {}
+            if not key.tc in out[key.tt]:
+                out[key.tt][key.tc] = []
+            out[key.tt][key.tc].append(key)
+        return out
+
+    # also fktotc?
 
     # pk gives primary keys as list for each table
     def pk(self):
-        return th.primary_keys()
+        return self.th.primary_keys()
 
     # tables gives the names of the tables in the db
     def tables(self):
-        result = self.db.qfad("exec sp_tables")
-        tables = []
-        for row in result:
-            if row["table_owner"] == "dbo":
-                tables.append(row["table_name"])
-        return tables
+        return self.th.tables()
 
     # update updates data in a table row
     def update(self, table, fromrow, torow):
@@ -150,7 +168,7 @@ class tbl:
             # the args
             args.append(todata[key])
 
-        ws = th.wherestring(fromdata, args) # fill args along the way
+        ws = self.th.wherestring(fromdata, args) # fill args along the way
         q = "update [" + table + "] set " + ", ".join(updatepairs) + " where " + ws
 
         # do the update

@@ -204,6 +204,15 @@ def run(table, alias, node):
     run(t, a, child)
 
 
+# selectwild gives selectionstring for wildcard select
+def selectwild(table, alias):
+  gets = []
+  for c in tb.columns(table):
+    s = "%s.%s" % (one(alias, table), c)
+    gets.append(f"{s} as '{s}'")
+  return ", ".join(gets)
+
+
 
 configchap = sys.argv[1]
 inquery = ""
@@ -219,8 +228,8 @@ where = a[1]
 fka = tb.fk()
 fkfromtc = tb.fkfromtc(fka)
 fkfromt = tb.fkfromt(fka)
-#print(fkfromtc)
-i = re.search(r"^(?i)select +", select).end() # (?i) case insensitive
+#print(fkfromt)
+i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
 select = select[i:]
 i = re.search(r"[.<(]", select).start()
 (selectfrom, selectfromalias) = splitas(select[0:i])
@@ -232,10 +241,24 @@ run(selectfrom, selectfromalias, root)
 joinstring = " \n".join(joins)
 selectget = "" # todo change
 if len(specificselect) == 0:
-  selectget = "*"
+  # selectget = "*"
+  selectget = selectwild(selectfrom, selectfromalias)
 else:
   #print(f"specificselect: {specificselect}")
-  selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
+  gets = []
+  for tri in specificselect:
+    table = tri[0]
+    alias = tri[1]
+    col = tri[2]
+
+    # if col is wildcard, name each column explicitly
+    if col == "*":
+      gets.append(selectwild(table, alias))
+    else: # explicit named columns
+      s = "%s.%s" % (one(alias, table), col)
+      gets.append(f"{s} as '{s}'")
+  selectget = ", ".join(gets)
+  #selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
 gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
 print(gensql)
 db = dbcq(configchap)

@@ -6,7 +6,7 @@ dq gives dot-notation for foreign keys in sql queries.
 
 it supports queries like
 
-> sampleidcont.sample.location; sampleidcont.psn =
+> select sampleidcont.sample.location; sampleidcont.psn =
 '59493038'
 
 in sql, the same query would be:
@@ -15,6 +15,14 @@ in sql, the same query would be:
   join sample s on sidb.sample = s.id <br>
   join samplelocation on sample.samplelocation = samplelocation.id <br>
   where sidc.psn = '59493038'
+
+backward joins are noted with <. starting from the sample table, the
+query above could also be written as
+
+> select sample(<sampleidcont.psn, .location); sampleidcont.psn = '59493038'
+
+the brackets mean that both <sampleidcont.psn and .location are joined
+to sample.
 
 ## setup
 
