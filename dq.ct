@@ -353,11 +353,11 @@ we take the first named table as from clause (for now).
 <<
 i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
 select = select[i:]
-i = re.search(r"[.<(]", select).start()
+i = re.search(r"[.<{]", select).start()
 (selectfrom, selectfromalias) = splitas(select[0:i])
 root = maketree(select[i:])
 run(selectfrom, selectfromalias, root)
-# for debugging without () notation
+# for debugging without {} notation
 #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
 >>
 
@@ -400,9 +400,9 @@ def maketree(query):
 in der schleife merken wir uns zuerst den bracket-level.
 
 <<maketree/fill reads
-    if c == "(":
+    if c == "{":
       bracketsin += 1
-    elif c == ")":
+    elif c == "}":
       bracketsin -= 1
 >>
 
@@ -412,7 +412,7 @@ dass wir auf dem level der aeusseren klammern sind (und sie nicht zu
 child-queries geheoren).
 
 <<
-    if (c == "(" and bracketsin == 1) or (c == "," and bracketsin == 1) or (c == ")" and bracketsin == 0):
+    if (c == "{" and bracketsin == 1) or (c == "," and bracketsin == 1) or (c == "}" and bracketsin == 0):
       #print(f"append read: {read}")
       reads.append(read)
       read = ""
@@ -424,7 +424,7 @@ child-queries geheoren).
       reads.append(read)
 >>
 
-wenn "(", ")" und "," einen read beendet haben wurden sie oben vom
+wenn "{", "}" und "," einen read beendet haben wurden sie oben vom
 continue geskippt, die restlichen characters lesen wir.
 
 <<

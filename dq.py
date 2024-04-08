@@ -167,11 +167,11 @@ def maketree(query):
   i = 0;
   while i < len(query):
     c = query[i]
-    if c == "(":
+    if c == "{":
       bracketsin += 1
-    elif c == ")":
+    elif c == "}":
       bracketsin -= 1
-    if (c == "(" and bracketsin == 1) or (c == "," and bracketsin == 1) or (c == ")" and bracketsin == 0):
+    if (c == "{" and bracketsin == 1) or (c == "," and bracketsin == 1) or (c == "}" and bracketsin == 0):
       #print(f"append read: {read}")
       reads.append(read)
       read = ""
@@ -231,11 +231,11 @@ fkfromt = tb.fkfromt(fka)
 #print(fkfromt)
 i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
 select = select[i:]
-i = re.search(r"[.<(]", select).start()
+i = re.search(r"[.<{]", select).start()
 (selectfrom, selectfromalias) = splitas(select[0:i])
 root = maketree(select[i:])
 run(selectfrom, selectfromalias, root)
-# for debugging without () notation
+# for debugging without {} notation
 #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
 #print(f"joins: {joins}")
 joinstring = " \n".join(joins)
