@@ -235,7 +235,7 @@ for s in sys.argv[2:]:
 # print("input query: " + inquery)
 tb = tbl(configchap)
 a = re.split(r"; +", inquery) # todo regex?
-select = a[0]
+select = a[0].lower() # is lowering ok here?
 #print(f"select: {select}")
 where = a[1]
 fka = tb.fk()

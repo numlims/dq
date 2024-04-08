@@ -42,7 +42,6 @@ org and ct with ct/orgtoct and ct/cttoorg.
 ## missing
 
 - python api and cli interface
-- handle lowercase names
 - allow update etc? https://stackoverflow.com/a/1293347
 
 ## license

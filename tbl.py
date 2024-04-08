@@ -1,23 +1,26 @@
 # tbl.py gives functions for sql table handling and inspection
+# table and column names are lower cased by default
 # see method comments for short description
 
 # columns
 # columntypes
 # deletefrom
-# insert
 # fk
 # fkfromt
 # fkfromtc
 # fktot
 # (fktotc)
 # identities
+# insert
+# update
 # pk
 # tables
 
 from dbcq import *
-from tblhelp import tblhelp
+from tblhelp import *
 
 class fk:
+    # init a foreign key. ft: from table, fc: from colum, tt: to table, tc: to column.
     def __init__(self, ft, fc, tt, tc):
         self.ft = ft
         self.fc = fc
@@ -27,6 +30,7 @@ class fk:
 class tbl:
 
     # init connects to the database target in db.ini
+    # todo maybe pass flag lower=False
     def __init__(self, target):
         self.db = dbcq(target)
         self.th = tblhelp(self.db)
@@ -73,7 +77,7 @@ class tbl:
         # do the insertion
         self.db.query(q, *data.values()) 
 
-    # fk gives all foreign keys as array of dicts [{ft, fc, tt, tc}]. ft: from table, fc: from colum, tt: to table, tc: to column.
+    # fk gives all foreign keys as array of fks
     def fk(self):
         # query from https://stackoverflow.com/a/17501870
         query = """
@@ -96,8 +100,8 @@ class tbl:
         # output foreign as objects
         a = []
         for row in rows:
-            # a.append(fk(row["ft"].lower(), row["fc"].lower(), row["tt"].lower(), row["tc"].lower())) # is lower() here a good idea?
-            a.append(fk(row["ft"], row["fc"], row["tt"], row["tc"])) # is lower() here a good idea?
+            a.append(fk(row["ft"].lower(), row["fc"].lower(), row["tt"].lower(), row["tc"].lower())) # is lower() here a good idea?
+            #a.append(fk(row["ft"], row["fc"], row["tt"], row["tc"])) 
             # a.append(row)
         return a
 

@@ -346,7 +346,7 @@ split the query string in select and where part on comma.
 
 <<main
 a = re.split(r"; +", inquery) # todo regex?
-select = a[0]
+select = a[0].lower() # is lowering ok here?
 #print(f"select: {select}")
 where = a[1]
 >>

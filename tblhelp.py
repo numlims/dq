@@ -9,7 +9,7 @@ class tblhelp:
     # withidentity checks that there are no keys in data that are not columns in table, leaves identity columns in
     def withidentity(self, table, data):
         out = {}
-        for k in columns(table):
+        for k in self.columns(table):
             if k in data:
                 out[k] = data[k]
         return out
@@ -51,7 +51,7 @@ class tblhelp:
                   and constraint_name like 'PK%'""", table)
         out = []
         for row in result:
-            out.append(row["column_name"])
+            out.append(row["column_name"].lower())
         return out
 
     # primary_keys returns all primary keys as table-indexed dict
@@ -61,9 +61,9 @@ class tblhelp:
                   where constraint_name like 'PK%'""")
         out = {}
         for row in result:
-            if not row["table_name"] in out:
-                out[row["table_name"]] = []
-                out[row["table_name"]].append(row["column_name"])
+            if not row["table_name"].lower() in out:
+                out[row["table_name"].lower()] = []
+            out[row["table_name"].lower()].append(row["column_name"].lower())
         return out
 
     # identity_keys returns the identity columns of table as array
@@ -75,7 +75,7 @@ class tblhelp:
 	and table_name = ?""", table)
         out = []
         for row in result:
-            out.append(row["column_name"])
+            out.append(row["column_name"].lower())
         return out
 
     # columns returns the column names of table as an array of strings,
@@ -90,13 +90,13 @@ class tblhelp:
             out = {}
             # make an entry for every table in the dict, even if it doesn't have a column
             for table in tables:
-                out[table] = []
+                out[table.lower()] = []
             for row in result:
                 t = row["table_name"]
                 c = row["column_name"]
                 if t not in tables: # e.g. schema_version is in result but not in tables
                     continue
-                out[t].append(c)
+                out[t.lower()].append(c.lower())
             return out
         
         else: # return columns for specific table
@@ -105,7 +105,7 @@ class tblhelp:
         where table_name = ? order by ordinal_position""", table)
             out = []
             for row in result:
-                out.append(row["column_name"])
+                out.append(row["column_name"].lower())
             return out
 
     # columntypes returns a dict of columnnames and types for table
@@ -123,7 +123,7 @@ class tblhelp:
         result = self.db.qfad(query, table) 
         out = {}
         for row in result:
-            out[row["name"]] = row["type"]
+            out[row["name"].lower()] = row["type"].lower()
         return out
 
 
@@ -137,5 +137,5 @@ class tblhelp:
         tables = []
         for row in result:
             if row["table_owner"] == "dbo":
-                tables.append(row["table_name"])
+                tables.append(row["table_name"].lower())
         return tables
