@@ -3,7 +3,7 @@
 usage:
 
 qp = qp(<target>)
-print(qp.q(<query>))
+print(qp.select(<query>))
 
 qp gives path-notation for foreign keys in sql queries.
 
@@ -39,7 +39,7 @@ class qp:
   <<join>>
   <<run>>
   <<selectwild>>
-  <<q>>
+  <<select>>
 
 <<main>>
 
@@ -318,17 +318,24 @@ wir importieren re.
 import re
 >>
 
-q handles the queries to qp.
+## qp offers a select method
 
-split the query string in select and where part on comma.
+der ansatz am anfang war an qp einen query string zu uebergeben, in
+dem query string und where string durch semikolon getrennt stehen. bei
+select ginge das, weil semikolon im query-path nicht vorkommt. moechte
+man auch update erlauben und bei update das update-argument vom
+where-string trennen muesste man semantisch parsen statt einfach auf
+semikolon zu splitten, weil semikolon im update-argument vorkommen
+kann.
 
-<<q
-# q handles queries to qp
-def q(qp, inquery):
-  a = re.split(r"; +", inquery) # todo regex?
-  select = a[0].lower() # is lowering ok here?
+jetzt wuerden wir den select path und where string als einzelne
+argumente nehmen, um nicht parsen zu muessen.
+
+<<select
+# select handles queries to qp
+def select(qp, select, where):
+  select = select.lower() # is lowering ok here?
   #print(f"select: {select}")
-  where = a[1]
 >>
 
 um mehrere joins an eine tabelle machen zu keonnen wuerden wir queries
@@ -343,8 +350,6 @@ dafuer bauen wir einen baum aus unserer inquery und parsen dann die
 we take the first named table as from clause (for now).
 
 <<
-  i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
-  select = select[i:]
   i = re.search(r"[.<{]", select).start()
   (selectfrom, selectfromalias) = splitas(select[0:i])
   root = maketree(select[i:])
@@ -388,7 +393,7 @@ wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es alias
 
 selectget, selectfrom, joinstring und where landen im generierten sql.
 
-<<q
+<<
   gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
   print(gensql)
 >>
@@ -534,10 +539,8 @@ import.
 from tbl import *
 >>
 
-in the command line interface, get the db config chapter and
-concatenate the rest of the args as query string.
-
-todo not working.
+todo: the commandline interface is not working, maybe take it from
+qpcli.py
 
 <<main
 if __name__ == "main":

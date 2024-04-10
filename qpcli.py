@@ -5,10 +5,14 @@ from qp import *
 import sys
 
 target = sys.argv[1]
-inquery = ""
-for s in sys.argv[2:]:
-    inquery += s
-    inquery += " " # todo don't put to end
-    # print("input query: " + inquery)
+operation = sys.argv[2]
+
 q = qp(target)
-print(q.q(inquery))
+
+if operation == "select":
+    path = sys.argv[3]
+    print(f"path: {path}")
+    where = sys.argv[4]
+    print(f"where: {where}")
+    print(q.select(path, where))
+    

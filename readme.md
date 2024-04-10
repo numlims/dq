@@ -6,8 +6,8 @@ qp gives path-notation for foreign keys in sql queries.
 
 it supports queries like
 
-> select sampleidcont.sample.location; sampleidcont.psn =
-'59493038'
+> select("sampleidcont.sample.location", "sampleidcont.psn =
+'59493038'")
 
 in sql, the same query would be:
 
@@ -19,7 +19,7 @@ in sql, the same query would be:
 backward joins are noted with <. starting from the sample table, the
 query above could also be written as
 
-> select sample{<sampleidcont.psn, .location}; sampleidcont.psn = '59493038'
+> select("sample{<sampleidcont.psn, .location}", "sampleidcont.psn = '59493038'")
 
 the brackets {} mean that both '<sampleidcont.psn' and '.location'
 hang on sample.

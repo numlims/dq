@@ -244,14 +244,10 @@ class qp:
     return ", ".join(gets)
 
 
-  # q handles queries to qp
-  def q(qp, inquery):
-    a = re.split(r"; +", inquery) # todo regex?
-    select = a[0].lower() # is lowering ok here?
+  # select handles queries to qp
+  def select(qp, select, where):
+    select = select.lower() # is lowering ok here?
     #print(f"select: {select}")
-    where = a[1]
-    i = re.search(r"(?i)^select +", select).end() # (?i) case insensitive
-    select = select[i:]
     i = re.search(r"[.<{]", select).start()
     (selectfrom, selectfromalias) = splitas(select[0:i])
     root = maketree(select[i:])
