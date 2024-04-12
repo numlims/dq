@@ -87,7 +87,7 @@ def maketree(query):
 
 
 
-class qp:
+class dq:
   def test(self):
     # is fkfromt reachable without self
     print("")
@@ -95,14 +95,14 @@ class qp:
     #print(fkfromt)
   
 
-  def __init__(qp, target):
-    qp.specificselect = []
-    qp.tb = tbl(target)
-    qp.db = dbcq(target)
-    qp.joins = []
-    fka = qp.tb.fk()
-    qp.fkfromtc = qp.tb.fkfromtc(fka)
-    qp.fkfromt = qp.tb.fkfromt(fka)
+  def __init__(dq, target):
+    dq.specificselect = []
+    dq.tb = tbl(target)
+    dq.db = dbcq(target)
+    dq.joins = []
+    fka = dq.tb.fk()
+    dq.fkfromtc = dq.tb.fkfromtc(fka)
+    dq.fkfromt = dq.tb.fkfromt(fka)
     #self.test()
     #print(fkfromt)
   
@@ -122,7 +122,7 @@ class qp:
     return out
   
 
-  def join(qp, table, tablealias, query):
+  def join(dq, table, tablealias, query):
     #print(f"query: {query}")
     #print(f"table: {table}")
     query = topostfix(query)
@@ -154,32 +154,32 @@ class qp:
           joinb = []
           j = len(names)-2
           while j >= 0:
-            fk = qp.fkfromtc[tableb][names[j]]
+            fk = dq.fkfromtc[tableb][names[j]]
             joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
             tableb = fk.tt
             aliasb = aliases[j]
             j -= 1
           #print(f"tableb: {tableb}, table: {table}")
           if tableb != table:
-            fk = qp.findfk(tableb, table)
+            fk = dq.findfk(tableb, table)
             #print(f"fk: {fk}")
             joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
           #print(f"joinb: {joinb}")
           joinb.reverse()
           # append elements from joinb to join
-          qp.joins = qp.joins + joinb
+          dq.joins = dq.joins + joinb
           table = names[len(names)-1]
           tablealias = aliases[len(names)-1]
     
 
-        if name in qp.fkfromtc[table]:
-          fk = qp.fkfromtc[table][name][0]
+        if name in dq.fkfromtc[table]:
+          fk = dq.fkfromtc[table][name][0]
           #print(fk)
-          qp.joins.append(joinforw(fk, tablealias, alias, lri))
+          dq.joins.append(joinforw(fk, tablealias, alias, lri))
           table = fk.tt
           tablealias = alias
         else:
-          qp.specificselect.append((table, tablealias, name))
+          dq.specificselect.append((table, tablealias, name))
   
 
       if w == "<":
@@ -202,20 +202,20 @@ class qp:
         joinb = []
         j = len(names)-2
         while j >= 0:
-          fk = qp.fkfromtc[tableb][names[j]]
+          fk = dq.fkfromtc[tableb][names[j]]
           joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
           tableb = fk.tt
           aliasb = aliases[j]
           j -= 1
         #print(f"tableb: {tableb}, table: {table}")
         if tableb != table:
-          fk = qp.findfk(tableb, table)
+          fk = dq.findfk(tableb, table)
           #print(f"fk: {fk}")
           joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
         #print(f"joinb: {joinb}")
         joinb.reverse()
         # append elements from joinb to join
-        qp.joins = qp.joins + joinb
+        dq.joins = dq.joins + joinb
         table = names[len(names)-1]
         tablealias = aliases[len(names)-1]
   
@@ -229,10 +229,10 @@ class qp:
   
 
   # run parses queries for node and its children starting from table
-  def run(qp, table, alias, node):
-    (t, a) = qp.join(table, alias, node[0])
+  def run(dq, table, alias, node):
+    (t, a) = dq.join(table, alias, node[0])
     for child in node[1:]:
-      qp.run(t, a, child)
+      dq.run(t, a, child)
 
 
   # selectwild gives selectionstring for wildcard select
@@ -244,26 +244,26 @@ class qp:
     return ", ".join(gets)
 
 
-  # select handles queries to qp
-  def select(qp, select, where):
+  # select handles queries to dq
+  def select(dq, select, where):
     select = select.lower() # is lowering ok here?
     #print(f"select: {select}")
     i = re.search(r"[.<{]", select).start()
     (selectfrom, selectfromalias) = splitas(select[0:i])
     root = maketree(select[i:])
-    qp.run(selectfrom, selectfromalias, root)
+    dq.run(selectfrom, selectfromalias, root)
     # for debugging without {} notation
     #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
     #print(f"joins: {joins}")
-    joinstring = " \n".join(qp.joins)
+    joinstring = " \n".join(dq.joins)
     selectget = "" # todo change
-    if len(qp.specificselect) == 0:
+    if len(dq.specificselect) == 0:
       # selectget = "*"
-      selectget = qp.selectwild(selectfrom, selectfromalias)
+      selectget = dq.selectwild(selectfrom, selectfromalias)
     else:
       #print(f"specificselect: {specificselect}")
       gets = []
-      for tri in qp.specificselect:
+      for tri in dq.specificselect:
         table = tri[0]
         alias = tri[1]
         col = tri[2]
@@ -279,7 +279,7 @@ class qp:
     gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
     print(gensql)
     # print("generated query: " + sqlquery)
-    return qp.db.qfad(gensql)
+    return dq.db.qfad(gensql)
     #print(json.dumps())
   
 
@@ -288,14 +288,14 @@ if __name__ == "main":
   target = sys.argv[1]
   operation = sys.argv[2]
 
-  q = qp(target)
+  d = dq(target)
 
   if operation == "select":
       path = sys.argv[3]
       print(f"path: {path}")
       where = sys.argv[4]
       print(f"where: {where}")
-      print(q.select(path, where))
+      print(d.select(path, where))
 
 
 

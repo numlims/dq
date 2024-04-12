@@ -1,4 +1,4 @@
-all: qp.py # readme.md
-qp.py: qp.ct
-	# syncnv qp.org qp.ct orgtoct cttoorg
-	./ct/ct qp.ct
+all: dq.py # readme.md
+dq.py: dq.ct
+	# syncnv dq.org dq.ct orgtoct cttoorg
+	./ct/ct dq.ct

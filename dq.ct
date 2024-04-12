@@ -1,27 +1,16 @@
-# qp
+# dq
+
+dq gives sql queries with dot notation.
 
 usage:
+dq = dq(<target>)
+print(dq.select(<query>))
 
-qp = qp(<target>)
-print(qp.select(<query>))
+for more, see readme.md
 
-qp gives path-notation for foreign keys in sql queries.
+the structure.
 
-it supports queries like
-
-select sampleidbox.sample.location; sampleidbox.psn =
-'4020189864'
-
-the same query in sql would be:
-
-select s.* from sampleidbox sidb
-  join sample s on sidb.sample = s.id
-  join samplelocation on sample.samplelocation = samplelocation.id  
-  where sidb.psn = '4020189864'
-
-the structure of our program:
-
-<<qp.py
+<<dq.py
 
 <<import>>
 
@@ -32,7 +21,7 @@ the structure of our program:
 <<join help>>
 <<maketree>>
 
-class qp:
+class dq:
   <<test>>
   <<init>>
   <<findfk>>
@@ -45,7 +34,7 @@ class qp:
 
 >>
 
-qp joint foreign keys via "." und "<". bei a.b ist der foreign
+dq joint foreign keys via "." und "<". bei a.b ist der foreign
 key von a nach b, bei a<b ist der foreign key von b nach a.
 
 in join nehmen wir die query in standardform und stellen den operator
@@ -53,7 +42,7 @@ jeweils nach den/die operanden, vielleicht geht das abarbeiten dann
 einfacher.
 
 <<join
-def join(qp, table, tablealias, query):
+def join(dq, table, tablealias, query):
   #print(f"query: {query}")
   #print(f"table: {table}")
   query = topostfix(query)
@@ -147,14 +136,14 @@ foreign key sein, es koennte auch ein normales feld oder * sein. wenn
 das der fall ist, merken wir es uns fuer den select.
 
 <<join/forwards
-      if name in qp.fkfromtc[table]:
-        fk = qp.fkfromtc[table][name][0]
+      if name in dq.fkfromtc[table]:
+        fk = dq.fkfromtc[table][name][0]
         #print(fk)
-        qp.joins.append(joinforw(fk, tablealias, alias, lri))
+        dq.joins.append(joinforw(fk, tablealias, alias, lri))
         table = fk.tt
         tablealias = alias
       else:
-        qp.specificselect.append((table, tablealias, name))
+        dq.specificselect.append((table, tablealias, name))
 >>
 
 weil forward joins direkt passieren und nicht auf die letzte tabelle
@@ -188,7 +177,7 @@ letzte gemerkte name ist tabellenname.
       joinb = []
       j = len(names)-2
       while j >= 0:
-        fk = qp.fkfromtc[tableb][names[j]]
+        fk = dq.fkfromtc[tableb][names[j]]
         joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
         tableb = fk.tt
         aliasb = aliases[j]
@@ -209,7 +198,7 @@ seite) "scid". ein beispiel, wo der fk mit angegeben ist: bei
 <<
       #print(f"tableb: {tableb}, table: {table}")
       if tableb != table:
-        fk = qp.findfk(tableb, table)
+        fk = dq.findfk(tableb, table)
         #print(f"fk: {fk}")
         joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
 >>
@@ -221,7 +210,7 @@ und appende sie.
       #print(f"joinb: {joinb}")
       joinb.reverse()
       # append elements from joinb to join
-      qp.joins = qp.joins + joinb
+      dq.joins = dq.joins + joinb
 >>
 
 der juengst gemerkte name ist der tabellenname von dem die naechste
@@ -318,9 +307,9 @@ wir importieren re.
 import re
 >>
 
-## qp offers a select method
+## dq offers a select method
 
-der ansatz am anfang war an qp einen query string zu uebergeben, in
+der ansatz am anfang war an dq einen query string zu uebergeben, in
 dem query string und where string durch semikolon getrennt stehen. bei
 select ginge das, weil semikolon im query-path nicht vorkommt. moechte
 man auch update erlauben und bei update das update-argument vom
@@ -332,8 +321,8 @@ jetzt wuerden wir den select path und where string als einzelne
 argumente nehmen, um nicht parsen zu muessen.
 
 <<select
-# select handles queries to qp
-def select(qp, select, where):
+# select handles queries to dq
+def select(dq, select, where):
   select = select.lower() # is lowering ok here?
   #print(f"select: {select}")
 >>
@@ -353,7 +342,7 @@ we take the first named table as from clause (for now).
   i = re.search(r"[.<{]", select).start()
   (selectfrom, selectfromalias) = splitas(select[0:i])
   root = maketree(select[i:])
-  qp.run(selectfrom, selectfromalias, root)
+  dq.run(selectfrom, selectfromalias, root)
   # for debugging without {} notation
   #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
 >>
@@ -363,20 +352,20 @@ selecten moechten, in joins stehen die joins.
 
 <<
   #print(f"joins: {joins}")
-  joinstring = " \n".join(qp.joins)
+  joinstring = " \n".join(dq.joins)
 >>
 
 wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es aliasse gibt, nimm aliasse.
 
 <<
   selectget = "" # todo change
-  if len(qp.specificselect) == 0:
+  if len(dq.specificselect) == 0:
     # selectget = "*"
-    selectget = qp.selectwild(selectfrom, selectfromalias)
+    selectget = dq.selectwild(selectfrom, selectfromalias)
   else:
     #print(f"specificselect: {specificselect}")
     gets = []
-    for tri in qp.specificselect:
+    for tri in dq.specificselect:
       table = tri[0]
       alias = tri[1]
       col = tri[2]
@@ -402,7 +391,7 @@ send the query to the db and print the result.
 
 <<
   # print("generated query: " + sqlquery)
-  return qp.db.qfad(gensql)
+  return dq.db.qfad(gensql)
   #print(json.dumps())
 >>
 
@@ -424,10 +413,10 @@ und die restlichen elemente die children.
 
 <<run
   # run parses queries for node and its children starting from table
-  def run(qp, table, alias, node):
-    (t, a) = qp.join(table, alias, node[0])
+  def run(dq, table, alias, node):
+    (t, a) = dq.join(table, alias, node[0])
     for child in node[1:]:
-      qp.run(t, a, child)
+      dq.run(t, a, child)
 >>
 
 die strategie von maketree ist: alles vor der ersten "(" klammer ist
@@ -504,23 +493,23 @@ machen jeweils baeume aus ihnen.
   return out
 >>
 
-qp takes the database target as argument.
+dq takes the database target as argument.
 
 <<init
-def __init__(qp, target):
-  qp.specificselect = []
-  qp.tb = tbl(target)
-  qp.db = dbcq(target)
-  qp.joins = []
+def __init__(dq, target):
+  dq.specificselect = []
+  dq.tb = tbl(target)
+  dq.db = dbcq(target)
+  dq.joins = []
   <<.>>
 >>
 
 get the foreign keys referenced by from-table and from-column.
 
 <<
-  fka = qp.tb.fk()
-  qp.fkfromtc = qp.tb.fkfromtc(fka)
-  qp.fkfromt = qp.tb.fkfromt(fka)
+  fka = dq.tb.fk()
+  dq.fkfromtc = dq.tb.fkfromtc(fka)
+  dq.fkfromt = dq.tb.fkfromt(fka)
   #self.test()
   #print(fkfromt)
 >>
@@ -546,14 +535,14 @@ if __name__ == "main":
   target = sys.argv[1]
   operation = sys.argv[2]
 
-  q = qp(target)
+  d = dq(target)
 
   if operation == "select":
       path = sys.argv[3]
       print(f"path: {path}")
       where = sys.argv[4]
       print(f"where: {where}")
-      print(q.select(path, where))
+      print(d.select(path, where))
 >>
 
 import sys.

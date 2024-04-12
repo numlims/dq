@@ -1,13 +1,13 @@
-# qpcli
-# usage: python qpcli.py <target> <query>
+# dqcli
+# usage: python dqcli.py <target> <query>
 
-from qp import *
+from dq import *
 import sys
 
 target = sys.argv[1]
 operation = sys.argv[2]
 
-q = qp(target)
+q = dq(target)
 
 if operation == "select":
     path = sys.argv[3]
