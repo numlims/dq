@@ -12,7 +12,7 @@ it supports queries like
 in sql, the same query would be:
 
 > select s.location from sampleidcont sidc <br>
-  join sample s on sidb.sample = s.id <br>
+  join sample s on sidc.sample = s.id <br>
   join samplelocation on sample.samplelocation = samplelocation.id <br>
   where sidc.psn = '59493038'
 
