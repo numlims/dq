@@ -1,6 +1,6 @@
 # dq
 
-dq gives sql queries with dot notation.
+dq gives dot notation for sql queries.
 
 usage:
 dq = dq(<target>)

@@ -2,7 +2,7 @@
 
 usage: python dqcli.py \<db target\> \<query\>
 
-dq gives path-notation for foreign keys in sql queries.
+dq gives sql queries with dot notation.
 
 it supports queries like
 
