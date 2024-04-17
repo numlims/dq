@@ -284,7 +284,7 @@ class dq:
   
 
 
-if __name__ == "main":
+if __name__ == "__main__":
   target = sys.argv[1]
   operation = sys.argv[2]
 
@@ -292,9 +292,9 @@ if __name__ == "main":
 
   if operation == "select":
       path = sys.argv[3]
-      print(f"path: {path}")
+      #print(f"path: {path}")
       where = sys.argv[4]
-      print(f"where: {where}")
+      #print(f"where: {where}")
       print(d.select(path, where))
 
 

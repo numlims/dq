@@ -6,9 +6,9 @@ usage:
 dq = dq(<target>)
 print(dq.select(<query>))
 
-for more, see readme.md
+for more on usage, see readme.md
 
-the structure.
+the program structure:
 
 <<dq.py
 
@@ -63,9 +63,8 @@ operand/operator paar. # todo was wenn das ein < ist
     i += 2
 >>
 
-unsere beiden operatoren sind "." (forward) und "<" (backward). wenn
-wir an einem der beiden operatoren sind, merke den vorausgehenden
-namen.
+wenn wir an einem der beiden operatoren ("." oder "<") sind, merke den
+vorausgehenden namen.
 
 <<
     if w == "." or w == "<":
@@ -531,7 +530,7 @@ from tbl import *
 todo: the commandline interface doesn't seem to be working, why?
 
 <<main
-if __name__ == "main":
+if __name__ == "__main__":
   target = sys.argv[1]
   operation = sys.argv[2]
 
@@ -539,9 +538,9 @@ if __name__ == "main":
 
   if operation == "select":
       path = sys.argv[3]
-      print(f"path: {path}")
+      #print(f"path: {path}")
       where = sys.argv[4]
-      print(f"where: {where}")
+      #print(f"where: {where}")
       print(d.select(path, where))
 >>
 

@@ -1,5 +1,6 @@
-db.ini
+db.ini*
 dump.txt*
+dump*
 *~
 old
 __*

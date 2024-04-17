@@ -2,7 +2,7 @@
 
 usage: python dqcli.py \<db target\> \<query\>
 
-dq gives sql queries with dot notation.
+dq gives dot notation for sql queries.
 
 it supports queries like
 
