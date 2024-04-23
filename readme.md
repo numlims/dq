@@ -1,6 +1,6 @@
 # dq
 
-usage: python dq.py \<db target\> \<query\>
+usage: python dq.py \<db target\> select \<query\> \<where\>
 
 dq gives dot notation for sql queries.
 
@@ -16,7 +16,7 @@ in sql, the same query would be:
   join samplelocation on sample.samplelocation = samplelocation.id <br>
   where sidc.psn = '59493038'
 
-backward joins are noted with <. starting from the sample table, the
+forward joins (left to right) are noted with ".". backward joins (right to left) are noted with "<". starting from the sample table, the
 query above could also be written as
 
 > select("sample{<sampleidcont.psn, .location}", "sampleidcont.psn = '59493038'")
