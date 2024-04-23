@@ -292,9 +292,7 @@ if __name__ == "__main__":
 
   if operation == "select":
       path = sys.argv[3]
-      #print(f"path: {path}")
       where = sys.argv[4]
-      #print(f"where: {where}")
       print(d.select(path, where))
 
 
