@@ -13,11 +13,12 @@ in sql, the same query would be:
 
 > select s.location from sampleidcont sidc <br>
   join sample s on sidc.sample = s.id <br>
-  join samplelocation on sample.samplelocation = samplelocation.id <br>
+  join samplelocation on sample.location = samplelocation.id <br>
   where sidc.psn = '59493038'
 
-forward joins (left to right) are noted with ".". backward joins (right to left) are noted with "<". starting from the sample table, the
-query above could also be written as
+forward joins (left to right) are noted with ".". backward joins
+(right to left) are noted with "<". starting from the sample table,
+the query above could also be written as
 
 > select("sample{<sampleidcont.psn, .location}", "sampleidcont.psn = '59493038'")
 

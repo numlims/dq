@@ -2,6 +2,8 @@
 
 dq gives dot notation for sql queries.
 
+for now, only mssql is supported, hopefully mysql support is coming along.
+
 usage:
 dq = dq(<target>)
 print(dq.select(<query>))
