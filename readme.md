@@ -48,9 +48,10 @@ org and ct with ct/orgtoct and ct/cttoorg.
 
 create a little sqlite example db with example/musicdb.ct.
 
-make and run it:
+cd into example, make and run it:
 
 ```
+cd example
 make
 sh musicdb.sh
 ```
