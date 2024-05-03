@@ -1,4 +1,5 @@
 
+import jsonpickle
 import re
 from tbl import *
 import sys
@@ -238,7 +239,7 @@ class dq:
   # selectwild gives selectionstring for wildcard select
   def selectwild(self, table, alias):
     gets = []
-    for c in self.tb.columns(table):
+    for c in self.tb.columns()[table]: # columns()[table]: quick fix 
       s = "%s.%s" % (one(alias, table), c)
       gets.append(f"{s} as '{s}'")
     return ", ".join(gets)
@@ -270,7 +271,7 @@ class dq:
   
         # if col is wildcard, name each column explicitly
         if col == "*":
-          gets.append(selectwild(table, alias))
+          gets.append(dq.selectwild(table, alias))
         else: # explicit named columns
           s = "%s.%s" % (one(alias, table), col)
           gets.append(f"{s} as '{s}'")

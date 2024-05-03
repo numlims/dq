@@ -29,6 +29,10 @@ hang on sample.
 
 rename db.example.ini to db.ini and enter your database info.
 
+rename dbc.example.ini to dbc.ini and link to your db.ini from
+it. there are two ini files so that you can put db.ini with sensitive
+connection info in another directory.
+
 to make, say
 
 ```
@@ -39,6 +43,31 @@ the code is in dq.ct. if you'd rather edit
 [.org](https://orgmode.org/manual/Working-with-Source-Code.html) than
 [.ct](https://github.com/tnustrings/codetext), you can convert between
 org and ct with ct/orgtoct and ct/cttoorg.
+
+## sqlite example
+
+create a little sqlite example db with example/musicdb.ct.
+
+make and run it:
+
+```
+make
+sh musicdb.sh
+```
+
+put music.db in the your db.ini like this:
+
+```
+[music]
+type = sqlite
+database = /path/to/music.db
+```
+
+then, back in the dq directory, you can say
+
+```
+python3 dq.py music select "song.album.title", "song.title='rocks off'"
+```
 
 ## missing
 

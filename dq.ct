@@ -147,6 +147,10 @@ das der fall ist, merken wir es uns fuer den select.
         dq.specificselect.append((table, tablealias, name))
 >>
 
+<<import
+import jsonpickle
+>>
+
 weil forward joins direkt passieren und nicht auf die letzte tabelle
 warten muessen, brauchen wir sie nicht wie backward joins zu beenden.
 
@@ -373,7 +377,7 @@ wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es alias
 
       # if col is wildcard, name each column explicitly
       if col == "*":
-        gets.append(selectwild(table, alias))
+        gets.append(dq.selectwild(table, alias))
       else: # explicit named columns
         s = "%s.%s" % (one(alias, table), col)
         gets.append(f"{s} as '{s}'")
@@ -403,7 +407,7 @@ selects like table.* need to be made explicit for each column.
   # selectwild gives selectionstring for wildcard select
   def selectwild(self, table, alias):
     gets = []
-    for c in self.tb.columns(table):
+    for c in self.tb.columns()[table]: # columns()[table]: quick fix 
       s = "%s.%s" % (one(alias, table), c)
       gets.append(f"{s} as '{s}'")
     return ", ".join(gets)
