@@ -67,13 +67,13 @@ database = /path/to/music.db
 then, back in the dq directory, you can say
 
 ```
-python dq.py music select "song.album.title", "song.title='rocks off'"
+python dq.py music select "song.album.title" "song.title='rocks off'"
 ```
 
 or, using backward (<) notation:
 
 ```
-python dq.py music select "album{<song.*, .title}", "song.title='rocks off'"
+python dq.py music select "album{<song.*, .title}" "song.title='rocks off'"
 ```
 
 ## missing
