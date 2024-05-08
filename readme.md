@@ -46,15 +46,7 @@ org and ct with ct/orgtoct and ct/cttoorg.
 
 ## sqlite example
 
-create a little sqlite example db with example/musicdb.ct.
-
-cd into example, make and run it:
-
-```
-cd example
-make
-sh musicdb.sh
-```
+there is a mini sqlite database, music.db, in the example directory.
 
 put music.db in the your db.ini like this:
 
@@ -62,6 +54,13 @@ put music.db in the your db.ini like this:
 [music]
 type = sqlite
 database = /path/to/music.db
+```
+
+and make sure that the dbc.ini points to db.ini:
+
+```
+[db]
+ini = /path/to/db.ini
 ```
 
 then, back in the dq directory, you can say

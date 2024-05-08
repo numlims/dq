@@ -1,5 +1,11 @@
 we create a sqllite database for music.
 
+run this with
+
+```
+sh musicdb.sh
+```
+
 there is an albums table.
 
 <<create.sql
