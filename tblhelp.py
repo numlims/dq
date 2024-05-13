@@ -8,15 +8,15 @@ class tblhelp:
     def __init__(self, db:dbcq):
         self.db = db
 
-    # withidentity checks that there are no keys in data that are not columns in table, leaves identity columns in
+    # withidentity checks that there are no keys in data that are not fields in table, leaves identity columns in
     def withidentity(self, table, data):
         out = {}
-        for k in self.columns(table):
+        for k in self.fields(table):
             if k in data:
                 out[k] = data[k]
         return out
 
-    # withoutidentity checks that there are no keys in data that are not columns in table, throws identity columns out
+    # withoutidentity checks that there are no keys in data that are not fields in table, throws identity columns out
     def withoutidentity(self, table, data):
         identities = self.identity_keys(table)
         for ident in identities:
@@ -45,7 +45,7 @@ class tblhelp:
 
     # primary_keys queries the primary keys for table and returns them
     # needed?
-    # todo build like columns(self, table=None)
+    # todo build like fields(self, table=None)
     def primary_keys(self, table):
         # if myssql
         # from https://stackoverflow.com/a/2341388
@@ -94,23 +94,26 @@ class tblhelp:
             print(f"identity_keys not supported for {self._type()}")
             exit
 
-    # columns returns the column names of table as an array of strings.
-    # if no table is given, return dict by table with columns for every table 
-    def columns(self, table=None):
+    # fields returns the column names of table as an array of
+    # strings. if no table is given, it returns a dict by table that
+    # holds the column names for every table. 
+    def fields(self, table=None):
         # return for all tables with columns
         if table == None:
             result = self._columnsquery()
+
             tables = self.tables()
             out = {}
             # make an entry for every table in the dict, even if it doesn't have a column
             for table in tables:
                 out[table.lower()] = []
             for row in result:
-                t = row["table_name"]
-                c = row["column_name"]
+                t = row["table_name"].lower()
+                c = row["column_name"].lower()
                 if t not in tables: # e.g. schema_version is in result but not in tables
                     continue
-                out[t.lower()].append(c.lower())
+                out[t].append(c)
+
             return out
         
         else: # return columns for specific table
@@ -123,6 +126,7 @@ class tblhelp:
     # _columnsquery returns dict array of tables and columns, either for one table or for all tables
     # this is an extra function because it can called with table name or without
     # we could also query all tables and colums, and filter afterward if only one table is wished
+    # todo: bug for sqlite with table argument
     def _columnsquery(self, table=None):
         query = ""
         if self._issqlite():
@@ -142,14 +146,16 @@ class tblhelp:
         elif self._ismssql():
             query = """
             select table_name, column_name from information_schema.columns 
-            order by ordinal_position
             """
             if table != None:
-                query += " where table_name = ?"
+                query += " where table_name = ? "
+            query += """
+            order by ordinal_position
+            """
         else:
             print(f"colums not supported for {self._type()}")
             exit
-            
+
         # pass table or not
         if table == None:
             return self.db.qfad(query)
