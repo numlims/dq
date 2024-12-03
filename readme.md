@@ -1,6 +1,6 @@
 # dq
 
-usage: python dq.py \<db target\> select \<query\> \<where\>
+usage: dq \<db target\> select \<query\> \<where\>
 
 dq gives dot notation for sql queries.
 
@@ -27,19 +27,10 @@ hang on sample.
 
 ## setup
 
-rename db.example.ini to db.ini and enter your database info.
+dq needs [tbl](https://github.com/numlims/tbl), which needs
+[dbcq](https://github.com/numlims/dbcq)
 
-rename dbc.example.ini to dbc.ini and link to your db.ini from
-it. there are two ini files so that you can put db.ini with sensitive
-connection info in another directory.
-
-to make, say
-
-```
-make
-```
-
-the code is in dq.ct. if you'd rather edit
+the code is in dq/*.ct. if you'd rather edit
 [.org](https://orgmode.org/manual/Working-with-Source-Code.html) than
 [.ct](https://github.com/tnustrings/codetext), you can convert between
 org and ct with ct/orgtoct and ct/cttoorg.
@@ -48,7 +39,7 @@ org and ct with ct/orgtoct and ct/cttoorg.
 
 there is a mini sqlite database, music.db, in the example directory.
 
-put music.db in the your db.ini like this:
+put music.db in the your .dbc file like this:
 
 ```
 [music]
@@ -56,23 +47,16 @@ type = sqlite
 database = /path/to/music.db
 ```
 
-and make sure that the dbc.ini points to db.ini:
+then you can say
 
 ```
-[db]
-ini = /path/to/db.ini
-```
-
-then, back in the dq directory, you can say
-
-```
-python dq.py music select "song.album.title" "song.title='rocks off'"
+dq music select "song.album.title" "song.title='rocks off'"
 ```
 
 or, using backward (<) notation:
 
 ```
-python dq.py music select "album{<song.*, .title}" "song.title='rocks off'"
+dq music select "album{<song.*, .title}" "song.title='rocks off'"
 ```
 
 ## missing

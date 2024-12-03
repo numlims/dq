@@ -2,7 +2,7 @@ from dq import dq
 import sys
 
 
-def main()
+def main():
   target = sys.argv[1]
   operation = sys.argv[2]
 

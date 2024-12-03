@@ -11,7 +11,7 @@ sys.exit(main())
 main starts dq
 
 <<main
-def main()
+def main():
   target = sys.argv[1]
   operation = sys.argv[2]
 
