@@ -1,0 +1,31 @@
+main offers the command line interface.
+
+todo: the commandline interface doesn't seem to be working, why?
+
+<</__main__.py
+<<import>>
+<<main>>
+sys.exit(main())
+>>
+
+main starts dq
+
+<<main
+def main()
+  target = sys.argv[1]
+  operation = sys.argv[2]
+
+  d = dq(target)
+
+  if operation == "select":
+      path = sys.argv[3]
+      where = sys.argv[4]
+      print(d.select(path, where))
+>>
+
+import sys and dq
+
+<<import
+from dq import dq
+import sys
+>>
