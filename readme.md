@@ -35,7 +35,7 @@ pip:
 pip install dq-<version>.whl
 ```
 
-see [dbcq](https://github.com/numlims/dbcq) for database connection setup.
+see [dbcq](https://github.com/numlims/dbcq?tab=readme-ov-file#db-connection) for database connection setup.
 
 ## sqlite example
 
