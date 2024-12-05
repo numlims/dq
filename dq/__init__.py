@@ -42,10 +42,10 @@ def topostfix(query):
 
 
 def joinforw(fk, asfrom, asto, lri):
-  return lri + " join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.ff + " = " + one(asto, fk.tt) + "." + fk.tf
+  return lri + " join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
 
 def joinbackw(fk, asfrom, asto, lri):
-  return lri + " join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tf + " = " + one(asfrom, fk.ft) + "." + fk.ff
+  return lri + " join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
 
 
 # maketree makes a tree from query
@@ -101,7 +101,7 @@ class dq:
     dq.db = dbcq(target)
     dq.joins = []
     fka = dq.tb.fk()
-    dq.fkfromtf = dq.tb.fkfromtf(fka)
+    dq.fkfromtc = dq.tb.fkfromtc(fka)
     dq.fkfromt = dq.tb.fkfromt(fka)
     #self.test()
     #print(fkfromt)
@@ -154,7 +154,7 @@ class dq:
           joinb = []
           j = len(names)-2
           while j >= 0:
-            fk = dq.fkfromtf[tableb][names[j]]
+            fk = dq.fkfromtc[tableb][names[j]]
             joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
             tableb = fk.tt
             aliasb = aliases[j]
@@ -172,8 +172,8 @@ class dq:
           tablealias = aliases[len(names)-1]
     
 
-        if name in dq.fkfromtf[table]:
-          fk = dq.fkfromtf[table][name][0]
+        if name in dq.fkfromtc[table]:
+          fk = dq.fkfromtc[table][name][0]
           #print(fk)
           dq.joins.append(joinforw(fk, tablealias, alias, lri))
           table = fk.tt
@@ -202,7 +202,7 @@ class dq:
         joinb = []
         j = len(names)-2
         while j >= 0:
-          fk = dq.fkfromtf[tableb][names[j]]
+          fk = dq.fkfromtc[tableb][names[j]]
           joinb.append(joinbackw(fk, aliasb, aliases[j], lris[j]))
           tableb = fk.tt
           aliasb = aliases[j]
@@ -238,7 +238,7 @@ class dq:
   # selectwild gives selectionstring for wildcard select
   def selectwild(self, table, alias):
     gets = []
-    for c in self.tb.fields()[table]: # fields()[table]: quick fix 
+    for c in self.tb.columns()[table]: # columns()[table]: quick fix 
       s = "%s.%s" % (one(alias, table), c)
       gets.append(f"{s} as '{s}'")
     return ", ".join(gets)

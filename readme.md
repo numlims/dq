@@ -25,15 +25,17 @@ the query above could also be written as
 the brackets {} mean that both '<sampleidcont.psn' and '.location'
 hang on sample.
 
-## setup
+## install
 
-dq needs [tbl](https://github.com/numlims/tbl), which needs
-[dbcq](https://github.com/numlims/dbcq)
+download dq whl from
+[here](https://github.com/numlims/dq/releases). install with
+pip:
 
-the code is in dq/*.ct. if you'd rather edit
-[.org](https://orgmode.org/manual/Working-with-Source-Code.html) than
-[.ct](https://github.com/tnustrings/codetext), you can convert between
-org and ct with ct/orgtoct and ct/cttoorg.
+```
+pip install dq-<version>.whl
+```
+
+see [dbcq](https://github.com/numlims/dbcq) for database connection setup.
 
 ## sqlite example
 
@@ -58,6 +60,13 @@ or, using backward (<) notation:
 ```
 dq music select "album{<song.*, .title}" "song.title='rocks off'"
 ```
+
+## code
+
+the code is in dq/*.ct. if you'd rather edit
+[.org](https://orgmode.org/manual/Working-with-Source-Code.html) than
+[.ct](https://github.com/tnustrings/codetext), you can convert between
+org and ct with ct/orgtoct and ct/cttoorg.
 
 ## missing
 
