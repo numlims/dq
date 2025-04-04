@@ -1,8 +1,8 @@
 # dq
 
-usage: dq \<db target\> select \<query\> \<where\>
+dot notation for sql queries.
 
-dq gives dot notation for sql queries.
+usage: dq \<db target\> select \<query\> \<where\>
 
 it supports queries like
 
@@ -35,7 +35,7 @@ pip:
 pip install dq-<version>.whl
 ```
 
-see [dbcq](https://github.com/numlims/dbcq?tab=readme-ov-file#db-connection) for database connection setup.
+for database connection see [dbcq](https://github.com/numlims/dbcq?tab=readme-ov-file#db-connection).
 
 ## sqlite example
 

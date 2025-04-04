@@ -12,29 +12,29 @@ for more on usage, see readme.md
 
 the program structure:
 
-<</__init__.py
+``//__init__.py:
 
-<<import>>
+``import``
 
-<<both>>
-<<one>>
-<<splitas>>
-<<topostfix>>
-<<join help>>
-<<maketree>>
+``both``
+``one``
+``splitas``
+``topostfix``
+``join help``
+``maketree``
 
 class dq:
-  <<test>>
-  <<init>>
-  <<findfk>>
-  <<join>>
-  <<run>>
-  <<selectwild>>
-  <<select>>
+  ``test``
+  ``init``
+  ``findfk``
+  ``join``
+  ``run``
+  ``selectwild``
+  ``select``
 
-<<main>>
+``main``
 
->>
+``
 
 dq joint foreign keys via "." und "<". bei a.b ist der foreign
 key von a nach b, bei a<b ist der foreign key von b nach a.
@@ -43,43 +43,43 @@ in join nehmen wir die query in standardform und stellen den operator
 jeweils nach den/die operanden, vielleicht geht das abarbeiten dann
 einfacher.
 
-<<join
+``/join:
 def join(dq, table, tablealias, query):
   #print(f"query: {query}")
   #print(f"table: {table}")
   query = topostfix(query)
   #print(f"topostfix query: '{query}'")
   words = query.split(" ")
-  <<.>>
->>
+  ``.``
+``
 
 wir starten beim ersten operator und nehmen in zweierschritten je ein
 operand/operator paar. # todo was wenn das ein < ist
 
-<<
+``
   i = 1
   # for i = 1; i < len(words); i += 2:
   while i < len(words):
     w = words[i]
-    <<.>>
+    ``.``
     i += 2
->>
+``
 
 wenn wir an einem der beiden operatoren ("." oder "<") sind, merke den
 vorausgehenden namen.
 
-<<
+``
     if w == "." or w == "<":
       (name, alias) = splitas(words[i-1])
-      <<.>>
->>
+      ``.``
+``
 
 precede namen mit (l), (r) und (i) fuer left, right und inner
 joins. das extrahieren wir hier aus dem namen in die variable lri,
 damit der name nach clean fuer die fk tables genutzt werden kann. lri
 uebergeben wir speeter an joinbackw und joinforw.
 
-<<
+``
       lri = ""
       if re.match(r"^\(l\)", name):
         lri = "left"
@@ -89,42 +89,42 @@ uebergeben wir speeter an joinbackw und joinforw.
         lri = "inner"
       # delete the lri tag from name
       name = re.sub(r"^\(.\)", "", name)
->>
+``
 
 wir sind an einem "." (forward) operator. wenn der letzte operator ein
 "<" (backward) war, beende backwards. mach dann die normalen forward
 schritte.
 
-<<..
+``..
     if w == ".":
       if i >= 0 and words[i-2] == "<": 
-        <<backwards ende>>
-      <<forwards>>
->>
+        ``backwards ende``
+      ``forwards``
+``
 
 wir sind an einem "<" (backward) operator. wenn der letzte operator
 ein "." (forward) war (oder es keinen letzten operator gab), beginne
 backwards. mach dann die normalen backwards schritte.
 
-<<
+``
     if w == "<":
       if i <= 1 or words[i-2] == ".": # todo index check
-        <<begin backwards>>
-      <<backwards>>
->>
+        ``begin backwards``
+      ``backwards``
+``
 
 falls wir am letzten wort sind, beende backwards. 
 
-<<
+``
     if i == len(words)-1:
-      <<backwards ende>>
->>
+      ``backwards ende``
+``
 
 returne die aktuelle table. child queries wuerden von ihr ausgehen.
 
-<<..
+``..
   return (table, tablealias)
->>
+``
 
 das war der schleifendurchlauf, jetzt kommen die details wie wir forwearts und
 backwards gehen, und wie wir backwards starten und beenden.
@@ -136,7 +136,7 @@ wenn das feld das letzte feld in einer forward-kette ist muss es kein
 foreign key sein, es koennte auch ein normales feld oder * sein. wenn
 das der fall ist, merken wir es uns fuer den select.
 
-<<join/forwards
+``/join/forwards:
       if name in dq.fkfromtc[table]:
         fk = dq.fkfromtc[table][name][0]
         #print(fk)
@@ -145,36 +145,36 @@ das der fall ist, merken wir es uns fuer den select.
         tablealias = alias
       else:
         dq.specificselect.append((table, tablealias, name))
->>
+``
 
-<<import
+``/import:
 import jsonpickle
->>
+``
 
 weil forward joins direkt passieren und nicht auf die letzte tabelle
 warten muessen, brauchen wir sie nicht wie backward joins zu beenden.
 
 backwards beginnen wir in dem wir die gemerkten namen leeren.
 
-<<join/begin backwards
+``/join/begin backwards:
         names = []
         aliases = []
         lris = []
->>
+``
 
 wenn wir backwards gehen merken wir uns den namen.
 
-<<join/backwards
+``/join/backwards:
       names.append(name)
       aliases.append(alias)
       lris.append(lri)
->>
+``
 
 backwards beenden wir indem wir die gemerkten namen vom vorletzten zum
 ersten durchlaufen, die jeweiligen foreign keys finden und joinen. der
 letzte gemerkte name ist tabellenname.
 
-<<join/backwards ende
+``/join/backwards ende:
       #print("backwards ende starting")
       #print(f"names: {names}")
       tableb = names[len(names)-1]
@@ -187,7 +187,7 @@ letzte gemerkte name ist tabellenname.
         tableb = fk.tt
         aliasb = aliases[j]
         j -= 1
->>
+``
 
 wenn beim forward zu backward richtungswechsel tabelle auf tabelle trifft
 (bps: sample<scid), dann ist tableb jetzt nicht gleich table, dem
@@ -200,32 +200,32 @@ seite) "scid". ein beispiel, wo der fk mit angegeben ist: bei
 `sample.oid<sample<scid` ist table (linke seite) "sample" und tableb
 (rechte seite) ist auch "sample".
 
-<<
+``
       #print(f"tableb: {tableb}, table: {table}")
       if tableb != table:
         fk = dq.findfk(tableb, table)
         #print(f"fk: {fk}")
         joinb.append(joinbackw(fk, aliasb, None, lris[len(names)-1])) # todo is None as lri right?
->>
+``
 
 reverse die backward joins (dann stehen sie wieder in query reihenfolge)
 und appende sie.
 
-<<
+``
       #print(f"joinb: {joinb}")
       joinb.reverse()
       # append elements from joinb to join
       dq.joins = dq.joins + joinb
->>
+``
 
 der juengst gemerkte name ist der tabellenname von dem die naechste
 forward-kette starten wuerde. wir setzen ihn erst hier, weil wir table
 vorher bei findfk brauchen.
 
-<<
+``
       table = names[len(names)-1]
       tablealias = aliases[len(names)-1]
->>
+``
 
 die funktionen um forward und backward zu joinen. man weare vielleicht
 versucht die aliase in eine tabelle zu tun statt sie als parameter
@@ -233,35 +233,35 @@ ueberall hin mitzunehmen, aber weil sie abheangig sind von der
 position im query string (eine tabelle keonnte mehrmals mit
 unterschiedlichen aliassen vorkommen) doch lieber mitnehmen.
 
-<<join help
+``/join help:
 def joinforw(fk, asfrom, asto, lri):
   return lri + " join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
 
 def joinbackw(fk, asfrom, asto, lri):
   return lri + " join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
->>
+``
 
 both gibt die aliase mit aus wenn sie nicht none sind.
 
-<<both
+``/both:
 # both gives name and alias if alias is non null
 def both(a, b):
   return a + (" " + b if b != None else "")
->>
+``
 
 one gibt den ersten, wenn der null ist den zweiten.
 
-<<one
+``/one:
 # one gives the first, if it is null, the second
 def one(a, b):
   if a == None:
     return b
   return a
->>
+``
 
 die funktion um den fk zu finden.
 
-<<findfk
+``/findfk:
 # findfk finds foreign key from table a to table b
 # if more than one, error
 def findfk(self, a, b):
@@ -273,11 +273,11 @@ def findfk(self, a, b):
         return None
       out = k
   return out
->>
+``
 
 splitas parst tablename:alias.
 
-<<splitas
+``/splitas:
 # splitas returns tuple of tablename and alias
 def splitas(s):
   a = s.split(":")
@@ -287,12 +287,12 @@ def splitas(s):
   if len(a) == 1:
     return (a[0], None)
   return (a[0], a[1])
->>
+``
 
 innerhalb der queries verwenden wir postfix notation fuer . und <. wie
 noetig ist das?
 
-<<topostfix
+``/topostfix:
 # topostfix puts the operators after their operands
 def topostfix(query):
   a = re.split(r"([.<])", query) # use parethesis () to keep the delimiter
@@ -304,13 +304,13 @@ def topostfix(query):
     out += a[i+1] + " " + a[i] + " " # a[i]: operator a[i+1]: name
     i += 2
   return out
->>
+``
 
 wir importieren re.
 
-<<import
+``/import
 import re
->>
+``
 
 ## dq offers a select method
 
@@ -325,12 +325,12 @@ kann.
 jetzt wuerden wir den select path und where string als einzelne
 argumente nehmen, um nicht parsen zu muessen.
 
-<<select
+``/select:
 # select handles queries to dq
 def select(dq, select, where):
   select = select.lower() # is lowering ok here?
   #print(f"select: {select}")
->>
+``
 
 um mehrere joins an eine tabelle machen zu keonnen wuerden wir queries
 gerne sich verzweigen lassen. zum beispiel:
@@ -343,26 +343,26 @@ dafuer bauen wir einen baum aus unserer inquery und parsen dann die
 
 we take the first named table as from clause (for now).
 
-<<
+``
   i = re.search(r"[.<{]", select).start()
   (selectfrom, selectfromalias) = splitas(select[0:i])
   root = maketree(select[i:])
   dq.run(selectfrom, selectfromalias, root)
   # for debugging without {} notation
   #join(selectfrom, select[i:]) # ".sample.samplelocation.*")
->>
+``
 
 jetzt puzzlen wir das sql zusammen. in specificselect steht was wir
 selecten moechten, in joins stehen die joins.
 
-<<
+``
   #print(f"joins: {joins}")
   joinstring = " \n".join(dq.joins)
->>
+``
 
 wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es aliasse gibt, nimm aliasse.
 
-<<
+``
   selectget = "" # todo change
   if len(dq.specificselect) == 0:
     # selectget = "*"
@@ -383,27 +383,27 @@ wenn keine eintraege im specific select sind, nehmen wir *. sonst, wenn es alias
         gets.append(f"{s} as '{s}'")
     selectget = ", ".join(gets)
     #selectget = ", ".join("%s.%s" % (one(trip[1], trip[0]), trip[2]) for trip in specificselect)
->>
+``
 
 selectget, selectfrom, joinstring und where landen im generierten sql.
 
-<<
+``
   gensql = f"select {selectget} from {both(selectfrom, selectfromalias)} \n{joinstring} \nwhere {where}"
   print(gensql)
->>
+``
 
 send the query to the db and print the result.
 
-<<
+``
   # print("generated query: " + sqlquery)
   return dq.db.qfad(gensql)
   #print(json.dumps())
->>
+``
 
 we decided name each output field by tablename and column. wildcard
 selects like table.* need to be made explicit for each column.
 
-<<selectwild
+``/selectwild:
   # selectwild gives selectionstring for wildcard select
   def selectwild(self, table, alias):
     gets = []
@@ -411,18 +411,18 @@ selects like table.* need to be made explicit for each column.
       s = "%s.%s" % (one(alias, table), c)
       gets.append(f"{s} as '{s}'")
     return ", ".join(gets)
->>
+``
 
 jede node im baum ist ein array, mit dem ersten element die node-query
 und die restlichen elemente die children.
 
-<<run
+``/run:
   # run parses queries for node and its children starting from table
   def run(dq, table, alias, node):
     (t, a) = dq.join(table, alias, node[0])
     for child in node[1:]:
       dq.run(t, a, child)
->>
+``
 
 die strategie von maketree ist: alles vor der ersten "(" klammer ist
 query, die folgenden komma-getrennten queries sind ihre children,
@@ -435,7 +435,7 @@ alles nach der schluss-klammer ")" ist ein weiteres child.
   ...
 ]
 
-<<maketree
+``/maketree:
 # maketree makes a tree from query
 def maketree(query):
   read = ""
@@ -444,26 +444,26 @@ def maketree(query):
   i = 0;
   while i < len(query):
     c = query[i]
-    <<fill reads>>
+    ``fill reads``
     i += 1
-  <<recurse>>
->>
+  ``recurse``
+``
 
 in der schleife merken wir uns zuerst den bracket-level.
 
-<<maketree/fill reads
+``/maketree/fill reads:
     if c == "{":
       bracketsin += 1
     elif c == "}":
       bracketsin -= 1
->>
+``
 
 reads werden geendet durch die oeffnende klammer, kommas, die
 schliessende klammer und string-ende. wir muessen bei kommas checken,
 dass wir auf dem level der aeusseren klammern sind (und sie nicht zu
 child-queries geheoren).
 
-<<
+``
     if (c == "{" and bracketsin == 1) or (c == "," and bracketsin == 1) or (c == "}" and bracketsin == 0):
       #print(f"append read: {read}")
       reads.append(read)
@@ -474,20 +474,20 @@ child-queries geheoren).
       #print(f"append read: {read}")
       read += c # take the last character at string end
       reads.append(read)
->>
+``
 
 wenn "{", "}" und "," einen read beendet haben wurden sie oben vom
 continue geskippt, die restlichen characters lesen wir.
 
-<<
+``
     read += c
->>
+``
 
 nach dem loop haben wir ein reads array wo der erste string die node
 query ist und die restlichen strings unparsed child queries sind. wir
 machen jeweils baeume aus ihnen.
 
-<<maketree/recurse
+``/maketree/recurse:
   #print(f"reads: {reads}")
   out = [reads[0]]
   i = 1
@@ -496,42 +496,42 @@ machen jeweils baeume aus ihnen.
     i += 1
   #print(f"out: {out}")
   return out
->>
+``
 
 dq takes the database target as argument.
 
-<<init
+``/init:
 def __init__(dq, target):
   dq.specificselect = []
   dq.tb = tbl(target)
   dq.db = dbcq(target)
   dq.joins = []
-  <<.>>
->>
+  ``.``
+``
 
 get the foreign keys referenced by from-table and from-column.
 
-<<
+``
   fka = dq.tb.fk()
   dq.fkfromtc = dq.tb.fkfromtc(fka)
   dq.fkfromt = dq.tb.fkfromt(fka)
   #self.test()
   #print(fkfromt)
->>
+``
 
-<<test
+``/test:
 def test(self):
   # is fkfromt reachable without self
   print("")
   print(specificselect)
   #print(fkfromt)
->>
+``
 
 import.
 
-<<import
+``/import
 from tbl import *
->>
+``
 
 
 

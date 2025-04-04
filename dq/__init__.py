@@ -3,20 +3,14 @@ import jsonpickle
 import re
 from tbl import *
 
-
-
 # both gives name and alias if alias is non null
 def both(a, b):
   return a + (" " + b if b != None else "")
-
-
 # one gives the first, if it is null, the second
 def one(a, b):
   if a == None:
     return b
   return a
-
-
 # splitas returns tuple of tablename and alias
 def splitas(s):
   a = s.split(":")
@@ -26,8 +20,6 @@ def splitas(s):
   if len(a) == 1:
     return (a[0], None)
   return (a[0], a[1])
-
-
 # topostfix puts the operators after their operands
 def topostfix(query):
   a = re.split(r"([.<])", query) # use parethesis () to keep the delimiter
@@ -39,15 +31,11 @@ def topostfix(query):
     out += a[i+1] + " " + a[i] + " " # a[i]: operator a[i+1]: name
     i += 2
   return out
-
-
 def joinforw(fk, asfrom, asto, lri):
   return lri + " join " + both(fk.tt, asto) + " on " + one(asfrom, fk.ft) + "." + fk.fc + " = " + one(asto, fk.tt) + "." + fk.tc
 
 def joinbackw(fk, asfrom, asto, lri):
   return lri + " join " + both(fk.ft, asfrom) + " on " + one(asto, fk.tt) + "." + fk.tc + " = " + one(asfrom, fk.ft) + "." + fk.fc
-
-
 # maketree makes a tree from query
 def maketree(query):
   read = ""
@@ -71,8 +59,6 @@ def maketree(query):
       read += c # take the last character at string end
       reads.append(read)
     read += c
-
-
     i += 1
   #print(f"reads: {reads}")
   out = [reads[0]]
@@ -83,18 +69,12 @@ def maketree(query):
   #print(f"out: {out}")
   return out
 
-
-
-
-
 class dq:
   def test(self):
     # is fkfromt reachable without self
     print("")
     print(specificselect)
     #print(fkfromt)
-  
-
   def __init__(dq, target):
     dq.specificselect = []
     dq.tb = tbl(target)
@@ -105,10 +85,6 @@ class dq:
     dq.fkfromt = dq.tb.fkfromt(fka)
     #self.test()
     #print(fkfromt)
-  
-
-  
-
   # findfk finds foreign key from table a to table b
   # if more than one, error
   def findfk(self, a, b):
@@ -120,8 +96,6 @@ class dq:
           return None
         out = k
     return out
-  
-
   def join(dq, table, tablealias, query):
     #print(f"query: {query}")
     #print(f"table: {table}")
@@ -143,8 +117,6 @@ class dq:
           lri = "inner"
         # delete the lri tag from name
         name = re.sub(r"^\(.\)", "", name)
-  
-
       if w == ".":
         if i >= 0 and words[i-2] == "<": 
           #print("backwards ende starting")
@@ -170,8 +142,6 @@ class dq:
           dq.joins = dq.joins + joinb
           table = names[len(names)-1]
           tablealias = aliases[len(names)-1]
-    
-
         if name in dq.fkfromtc[table]:
           fk = dq.fkfromtc[table][name][0]
           #print(fk)
@@ -180,20 +150,14 @@ class dq:
           tablealias = alias
         else:
           dq.specificselect.append((table, tablealias, name))
-  
-
       if w == "<":
         if i <= 1 or words[i-2] == ".": # todo index check
           names = []
           aliases = []
           lris = []
-  
-
         names.append(name)
         aliases.append(alias)
         lris.append(lri)
-  
-
       if i == len(words)-1:
         #print("backwards ende starting")
         #print(f"names: {names}")
@@ -218,23 +182,13 @@ class dq:
         dq.joins = dq.joins + joinb
         table = names[len(names)-1]
         tablealias = aliases[len(names)-1]
-  
-
-  
-
       i += 2
     return (table, tablealias)
-  
-
-  
-
   # run parses queries for node and its children starting from table
   def run(dq, table, alias, node):
     (t, a) = dq.join(table, alias, node[0])
     for child in node[1:]:
       dq.run(t, a, child)
-
-
   # selectwild gives selectionstring for wildcard select
   def selectwild(self, table, alias):
     gets = []
@@ -242,8 +196,6 @@ class dq:
       s = "%s.%s" % (one(alias, table), c)
       gets.append(f"{s} as '{s}'")
     return ", ".join(gets)
-
-
   # select handles queries to dq
   def select(dq, select, where):
     select = select.lower() # is lowering ok here?
@@ -281,10 +233,4 @@ class dq:
     # print("generated query: " + sqlquery)
     return dq.db.qfad(gensql)
     #print(json.dumps())
-  
-
-
-
-
-
 

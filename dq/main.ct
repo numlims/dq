@@ -2,15 +2,15 @@ main offers the command line interface.
 
 todo: the commandline interface doesn't seem to be working, why?
 
-<</__main__.py
-<<import>>
-<<main>>
+``//__main__.py:
+``import``
+``main``
 sys.exit(main())
->>
+``
 
 main starts dq
 
-<<main
+``/main:
 def main():
   target = sys.argv[1]
   operation = sys.argv[2]
@@ -21,11 +21,11 @@ def main():
       path = sys.argv[3]
       where = sys.argv[4]
       print(d.select(path, where))
->>
+``
 
 import sys and dq
 
-<<import
+``/import:
 from dq import dq
 import sys
->>
+``
